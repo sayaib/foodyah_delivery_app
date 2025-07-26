@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'otp_verification_page.dart';
+import '../../services/api_client.dart'; // Update path if needed
 
 class EmailInputPage extends StatefulWidget {
   const EmailInputPage({super.key});
@@ -10,21 +11,57 @@ class EmailInputPage extends StatefulWidget {
 
 class _EmailInputPageState extends State<EmailInputPage> {
   final TextEditingController emailController = TextEditingController();
+  bool isLoading = false;
 
-  void _sendOtp() {
+  Future<void> _sendOtp() async {
     final email = emailController.text.trim();
-    if (email.isNotEmpty && email.contains('@')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OTPVerificationPage(type: 'email', value: email),
-        ),
-      );
-    } else {
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+    if (!emailRegex.hasMatch(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid email address')),
+        const SnackBar(content: Text("Enter a valid email address")),
       );
+      return;
     }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await ApiClient.post('/request-otp', {
+        "email": email,
+        "role": "restaurant"
+      });
+
+      if (response['msg'] == "OTP sent") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OTPVerificationPage(type: 'email', value: email),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['err'] ?? 'Failed to send OTP')),
+        );
+      }
+    } catch (e) {
+      debugPrint("Email OTP error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Server error occurred")),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
   }
 
   @override
@@ -80,7 +117,7 @@ class _EmailInputPageState extends State<EmailInputPage> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _sendOtp,
+                  onPressed: isLoading ? null : _sendOtp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
@@ -89,7 +126,9 @@ class _EmailInputPageState extends State<EmailInputPage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text("Send OTP"),
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.black)
+                      : const Text("Send OTP"),
                 ),
               ],
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'otp_verification_page.dart'; // Ensure this file exists and class is named correctly
 import '../../services/api_client.dart'; // Adjust path to your actual API helper
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class PhoneInputPage extends StatefulWidget {
   const PhoneInputPage({super.key});
