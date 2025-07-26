@@ -30,7 +30,6 @@ class _PhoneInputPageState extends State<PhoneInputPage> {
     try {
       final response = await ApiClient.post('/request-otp', {
         "phone": phone,
-        "email": "ssayaib@gmail.com", // Static for demo
         "role": "restaurant"
       });
       debugPrint("response: $response");

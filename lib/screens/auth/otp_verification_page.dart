@@ -55,6 +55,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
         // TODO: Navigate to dashboard or home page
         Navigator.pushReplacementNamed(context, '/dashboard');
+
       } else {
         setState(() => errorMessage = response['message'] ?? 'Invalid OTP.');
       }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'auth/login_page.dart';
 import 'dart:math';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'auth/login_page.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -13,6 +14,8 @@ class _LandingPageState extends State<LandingPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _rotation;
+
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -31,6 +34,21 @@ class _LandingPageState extends State<LandingPage>
     ));
 
     _controller.forward();
+  }
+
+  Future<void> _handleGetStarted() async {
+    String? token = await _secureStorage.read(key: 'jwt_token');
+
+    if (!mounted) return;
+
+    if (token != null) {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+    }
   }
 
   @override
@@ -65,7 +83,6 @@ class _LandingPageState extends State<LandingPage>
                 ),
               ),
               const SizedBox(height: 24),
-
               RichText(
                 text: const TextSpan(
                   style: TextStyle(
@@ -82,23 +99,17 @@ class _LandingPageState extends State<LandingPage>
                   ],
                 ),
               ),
-
               const SizedBox(height: 8),
-
               const Text(
                 'Delicious Food, Delivered Fast',
                 style: TextStyle(fontSize: 16, color: Colors.white70),
               ),
-
               const SizedBox(height: 12),
-
               const Text(
                 '🍕 🍔 🥣 🥗 🌮',
                 style: TextStyle(fontSize: 22),
               ),
-
               const SizedBox(height: 40),
-
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange.shade100,
@@ -110,12 +121,7 @@ class _LandingPageState extends State<LandingPage>
                   const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
                   elevation: 4,
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                  );
-                },
+                onPressed: _handleGetStarted,
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -129,11 +135,9 @@ class _LandingPageState extends State<LandingPage>
                   ],
                 ),
               ),
-
               const SizedBox(height: 40),
-
               const Text(
-                'Version 1.0.0 • Made with ❤️ for food lovers',
+                'FoodYah - Version 1.1.0 • Made with ❤️ for food lovers',
                 style: TextStyle(fontSize: 12, color: Colors.white70),
               ),
             ],
