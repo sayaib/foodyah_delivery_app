@@ -31,7 +31,7 @@ class _EmailInputPageState extends State<EmailInputPage> {
     try {
       final response = await ApiClient.post('/request-otp', {
         "email": email,
-        "role": "restaurant"
+        "role": "delivery"
       });
 
       if (response['msg'] == "OTP sent") {
