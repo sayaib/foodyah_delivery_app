@@ -55,7 +55,7 @@ class _DashboardPageState extends State<DashboardPage> {
           content: Text(data['body'] ?? "You have a new delivery offer."),
           actions: <Widget>[
             TextButton(
-              child: const Text('View Details'),
+              child: const Text('Accept'),
               onPressed: () async {
                 // ✅ Signal background to start emitting location
                 FlutterBackgroundService().invoke("startLocationTracking");

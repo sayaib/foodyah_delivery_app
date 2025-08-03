@@ -74,11 +74,22 @@ void onStart(ServiceInstance service) async {
 
   socket.connect();
 
+  // Initially, do not track location
+  bool isTracking = false;
+
+  // Receive signal to start tracking
+  service.on('startLocationTracking').listen((event) {
+    isTracking = true;
+    debugPrint("📍 Start location tracking command received.");
+  });
+
   socket.on("delivery_request", (data) {
     _handleDeliveryRequest(data, service);
   });
 
   Timer.periodic(const Duration(seconds: 10), (timer) async {
+    if (!isTracking) return; // Do not send location if not tracking
+
     if (!(await Geolocator.isLocationServiceEnabled())) return;
 
     try {
@@ -88,7 +99,7 @@ void onStart(ServiceInstance service) async {
       final now = DateTime.now().toIso8601String();
 
       socket.emit('location', {"lat": lat, "lon": lon, "time": now});
-      debugPrint("Location sent: $lat, $lon");
+      debugPrint("📤 Location sent: $lat, $lon");
 
       if (service is AndroidServiceInstance &&
           await service.isForegroundService()) {
@@ -111,7 +122,7 @@ void onStart(ServiceInstance service) async {
       logs.add("[$now] -> $lat, $lon");
       await prefs.setStringList('logs', logs);
     } catch (e) {
-      debugPrint("Location Error: $e");
+      debugPrint("❌ Location Error: $e");
     }
   });
 }
