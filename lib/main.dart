@@ -1,13 +1,39 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
+// Screens
 import 'package:foodyah_delivery_app/screens/DashboardPage.dart';
 import 'package:foodyah_delivery_app/screens/auth/otp_verification_page.dart';
-import 'screens/Landing_page.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:foodyah_delivery_app/screens/Landing_page.dart';
+import 'SettingsPage.dart'; // Assuming it's moved to /screens//
+import 'services/background_service.dart';
+
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env"); // Load once in main isolate
+
+  // ✅ Save socket URL for background isolate
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(
+    'SOCKET_SERVER_URL_ANDROID',
+    dotenv.env['SOCKET_SERVER_URL_ANDROID'] ?? 'http://10.0.2.2:5050',
+  );
+
+  await initializeService();
+
 
   final storage = FlutterSecureStorage();
   final token = await storage.read(key: 'jwt_token');
@@ -30,7 +56,8 @@ class FoodyaApp extends StatelessWidget {
       routes: {
         '/': (context) => const LandingPage(),
         '/dashboard': (context) => const DashboardPage(),
-        '/otp': (context) => const OTPVerificationPage(type: '', value: ''), // default dummy; real one passed with Navigator
+        '/otp': (context) => const OTPVerificationPage(type: '', value: ''),
+        '/settings': (context) => const SettingsPage(),
       },
     );
   }
