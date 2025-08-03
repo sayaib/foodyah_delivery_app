@@ -64,7 +64,7 @@ void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
 
-  final socketUrl = prefs.getString('SOCKET_SERVER_URL_ANDROID') ?? 'http://10.0.2.2:5050';
+  final socketUrl = prefs.getString('SOCKET_SERVER_URL_IOS') ?? 'http://127.0.0.1:5050';
   final notification = FlutterLocalNotificationsPlugin();
 
   final socket = IO.io(socketUrl, {

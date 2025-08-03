@@ -2,22 +2,33 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>NSLocationAlwaysUsageDescription</key>
-    <string>We use your location to track deliveries even when the app is in background.</string>
+   <key>UIBackgroundModes</key>
+      <array>
+          <string>location</string>
+          <string>fetch</string>
+          <string>processing</string>
+      </array>
 
-    <!-- Location (Foreground) -->
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>We need your location to assign deliveries.</string>
+      <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+      <string>We need your location to provide delivery tracking features.</string>
 
-    <!-- Location (Background) -->
-    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>We use your location to track deliveries in background.</string>
+      <key>NSLocationWhenInUseUsageDescription</key>
+      <string>This app uses your location while in use.</string>
 
-    <!-- Background Modes (Enable in Xcode manually as well) -->
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>location</string>
-    </array>
+      <key>NSLocationAlwaysUsageDescription</key>
+      <string>This app uses your location in the background.</string>
+      <key>NSAppTransportSecurity</key>
+      <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+      </dict>
+
+
+       <key>BGTaskSchedulerPermittedIdentifiers</key>
+       <array>
+           <string>dev.flutter.background.refresh</string>
+       </array>
+
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
