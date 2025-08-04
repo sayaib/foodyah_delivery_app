@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'dart:io' show Platform;
 
 @pragma('vm:entry-point')
 Future<void> initializeService() async {
@@ -41,6 +42,7 @@ Future<void> initializeService() async {
       autoStart: false,
       onForeground: onStart,
       onBackground: onIosBackground,
+      //: 'com.example.foodyahdeliveryapp.foodyahDeliveryApp.location_task',
     ),
   );
 }
@@ -56,98 +58,112 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+  final notification = FlutterLocalNotificationsPlugin();
+
+  // --- Use a StreamSubscription instead of a Timer ---
+  StreamSubscription<Position>? locationSubscription;
 
   final socketUrl =
-      prefs.getString('SOCKET_SERVER_URL') ?? 'http://127.0.0.1:5050';
-  final notification = FlutterLocalNotificationsPlugin();
-  Timer? locationTimer;
-  bool isTracking = prefs.getBool('isTracking') ?? false;
+      prefs.getString('SOCKET_SERVER_URL') ?? 'http://10.0.2.2:5050';
 
   final socket = IO.io(socketUrl, <String, dynamic>{
     'transports': ['websocket'],
-    'autoConnect': false, // Connect manually
+    'autoConnect': false,
   });
 
-  // --- Socket Event Listeners for Debugging ---
   socket.onConnect((_) => debugPrint('✅ SOCKET: Connected'));
   socket.onDisconnect((_) => debugPrint('❌ SOCKET: Disconnected'));
   socket.onError((data) => debugPrint('SOCKET ERROR: $data'));
-
-  // --- FIXED: Added listener for new delivery requests ---
   socket.on('new_delivery_request', (data) {
     _handleDeliveryRequest(data, service);
   });
 
   socket.connect();
 
-  // --- Service Command Listeners from UI ---
+  // Function to start listening to location updates
+  void startLocationStream() {
+    // If already listening, do nothing
+    if (locationSubscription != null) return;
+
+    final locationSettings = Platform.isAndroid
+        ? AndroidSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10, // Update every 10 meters
+      forceLocationManager: true,
+      intervalDuration: const Duration(seconds: 10), // Update every 10s
+    )
+        : AppleSettings(
+      accuracy: LocationAccuracy.high,
+      activityType: ActivityType.automotiveNavigation,
+      distanceFilter: 10, // Update every 10 meters
+      pauseLocationUpdatesAutomatically: true,
+      // IMPORTANT: This allows background updates
+      showBackgroundLocationIndicator: true,
+    );
+
+    locationSubscription =
+        Geolocator.getPositionStream(locationSettings: locationSettings)
+            .listen((Position position) {
+          final driverId = prefs.getString('driverId') ?? 'driver_007';
+
+          if (socket.connected) {
+            socket.emit('updateLocation', {
+              'driverId': driverId,
+              'latitude': position.latitude,
+              'longitude': position.longitude,
+            });
+            debugPrint(
+                '📍 BG_SERVICE: Location sent: ${position.latitude}, ${position.longitude}');
+          } else {
+            debugPrint('⚠️ BG_SERVICE: Cannot send location, socket not connected.');
+          }
+
+          // Update notification on both platforms
+          notification.show(
+            888,
+            'Delivery Service Active',
+            'Tracking... Last update: ${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+            const NotificationDetails(
+              android: AndroidNotificationDetails(
+                'location_channel',
+                'Location Tracking',
+                icon: '@mipmap/ic_launcher',
+                ongoing: true,
+              ),
+            ),
+          );
+        }, onError: (error) {
+          debugPrint('BG_SERVICE: Error in location stream: $error');
+          locationSubscription?.cancel();
+          locationSubscription = null;
+        });
+  }
+
+  // Check initial tracking status and start stream if needed
+  if (prefs.getBool('isTracking') ?? false) {
+    startLocationStream();
+  }
+
   service.on('startLocationTracking').listen((event) {
-    isTracking = true;
     prefs.setBool('isTracking', true);
+    startLocationStream(); // Start the stream
     debugPrint("📍 BG_SERVICE: Start location tracking command received.");
   });
 
   service.on('stopLocationTracking').listen((event) {
-    isTracking = false;
     prefs.setBool('isTracking', false);
+    locationSubscription?.cancel(); // Stop the stream
+    locationSubscription = null;
     debugPrint("🛑 BG_SERVICE: Stop location tracking command received.");
   });
 
-  // FIXED: Added a graceful stop mechanism
   service.on('stopService').listen((event) async {
-    isTracking = false;
     await prefs.setBool('isTracking', false);
-    locationTimer?.cancel();
+    locationSubscription?.cancel(); // Stop the stream
+    locationSubscription = null;
     socket.disconnect();
     await service.stopSelf();
     debugPrint("🛑 BG_SERVICE: Service has been stopped.");
-  });
-
-  // --- Main Location Sending Logic ---
-  locationTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
-    if (!isTracking) {
-      // If tracking is off, do nothing.
-      return;
-    }
-
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        forceAndroidLocationManager: true, // Recommended for background
-      );
-
-      final driverId = prefs.getString('driverId') ?? 'driver_007';
-
-      // FIXED: Implemented the missing location emit logic
-      if (socket.connected) {
-        socket.emit('updateLocation', {
-          'driverId': driverId,
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-        });
-        debugPrint(
-            '📍 BG_SERVICE: Location sent: ${position.latitude}, ${position.longitude}');
-      } else {
-        debugPrint('⚠️ BG_SERVICE: Cannot send location, socket not connected.');
-      }
-    } catch (e) {
-      debugPrint('BG_SERVICE: Error getting/sending location: $e');
-    }
-
-    // Update the notification to show the service is active
-    notification.show(
-      888,
-      'Delivery Service',
-      'Tracking location in background... ${DateTime.now()}',
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'location_channel',
-          'Location Tracking',
-          icon: '@mipmap/ic_launcher',
-          ongoing: true,
-        ),
-      ),
-    );
   });
 }
 

@@ -4,6 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// Import the new permission service
+import 'package:foodyah_delivery_app/services/location_permission_service.dart'; // Update with your project name
+
 class OrderInProgressPage extends StatefulWidget {
   const OrderInProgressPage({Key? key}) : super(key: key);
 
@@ -14,6 +17,7 @@ class OrderInProgressPage extends StatefulWidget {
 class _OrderInProgressPageState extends State<OrderInProgressPage> {
   bool isTracking = false;
   bool serviceRunning = false;
+  bool _isCheckingPermission = false;
   final FlutterBackgroundService _service = FlutterBackgroundService();
 
   @override
@@ -23,8 +27,8 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     _setupServiceListener();
   }
 
-  // MODIFIED: Added a listener to handle events from the background service
   void _setupServiceListener() {
+    // ... (This part remains the same as the previous fix)
     _service.on('showDialog').listen((event) {
       if (event != null && mounted) {
         showDialog(
@@ -59,29 +63,54 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     setState(() => serviceRunning = isRunning);
   }
 
-  // FIXED: Corrected the logic for toggling tracking.
+  // MODIFIED: Integrated the permission flow.
   Future<void> _toggleTracking(bool? value) async {
     if (value == null) return;
+    setState(() {
+      _isCheckingPermission = true;
+    });
+    try {
+      if (value) {
+        // If turning ON, first request permission.
+        final hasPermission = await LocationPermissionService
+            .requestLocationPermission(context);
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isTracking', value);
+        if (!hasPermission) {
+          // If permission is not granted, do not proceed.
+          // The UI will not change to "ON".
+          return;
+        }
 
-    if (value) {
-      // If turning ON
-      if (!serviceRunning) {
-        await _service.startService();
-        setState(() => serviceRunning = true);
+        // If permission is granted, proceed to start the service and tracking
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isTracking', true);
+
+        if (!serviceRunning) {
+          await _service.startService();
+          setState(() => serviceRunning = true);
+        }
+        _service.invoke("startLocationTracking");
+        debugPrint("UI: Invoked startLocationTracking");
+        setState(() => isTracking = true);
+      } else {
+        // If turning OFF, no permission needed. Just stop.
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isTracking', false);
+        _service.invoke("stopLocationTracking");
+        debugPrint("UI: Invoked stopLocationTracking");
+        setState(() => isTracking = false);
       }
-      _service.invoke("startLocationTracking");
-      debugPrint("UI: Invoked startLocationTracking");
-    } else {
-      // If turning OFF
-      _service.invoke("stopLocationTracking");
-      debugPrint("UI: Invoked stopLocationTracking");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingPermission = false;
+        });
+      }
     }
-    setState(() => isTracking = value);
   }
 
+  // (The rest of the file: _stopService, _openGoogleMapDirections, build method remains the same)
+  // ...
   Future<void> _stopService() async {
     // Stop tracking within the service first
     _service.invoke("stopLocationTracking");
@@ -101,15 +130,12 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     });
   }
 
-  // FIXED: The URL for Google Maps was incorrect.
   Future<void> _openGoogleMapDirections(
       {required double lat, required double lng}) async {
-    // This is the correct, standard URL format for Google Maps directions
     final Uri googleMapUrl =
     Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$lat,$lng");
 
     if (!await launchUrl(googleMapUrl, mode: LaunchMode.externalApplication)) {
-      // Consider showing a snackbar or dialog on failure
       debugPrint("Could not launch Google Maps.");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -161,14 +187,14 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                       title: const Text('ON - Sending Location'),
                       value: true,
                       groupValue: isTracking,
-                      onChanged: _toggleTracking,
+                      onChanged: _isCheckingPermission ? null : _toggleTracking,
                       activeColor: Colors.green,
                     ),
                     RadioListTile<bool>(
                       title: const Text('OFF - Not Sending Location'),
                       value: false,
                       groupValue: isTracking,
-                      onChanged: _toggleTracking,
+                      onChanged: _isCheckingPermission ? null : _toggleTracking,
                       activeColor: Colors.red,
                     ),
                     const SizedBox(height: 10),
@@ -186,6 +212,29 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
               ),
             ),
             const SizedBox(height: 20),
+            if (_isCheckingPermission)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 3),
+                    ),
+                    SizedBox(width: 10),
+                    Text("Checking permissions..."),
+                  ],
+                ),
+              ),
+            Text(
+              serviceRunning
+                  ? 'Background service is RUNNING'
+                  : 'Background service is STOPPED',
+              // (The rest of the widget build remains the same)
+              // ...
+            ),
             const Expanded(
               child: Center(
                   child: Text(
@@ -201,7 +250,6 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         icon: const Icon(Icons.directions),
         label: const Text("Get Directions"),
         onPressed: () {
-          // Example coordinates for Kolkata, India
           _openGoogleMapDirections(lat: 22.5726, lng: 88.3639);
         },
       ),

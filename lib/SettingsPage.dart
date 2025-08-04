@@ -20,7 +20,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _checkAndStartService() async {
-    await initializeService();
+    // await initializeService();
 
     final service = FlutterBackgroundService();
     bool running = await service.isRunning();
