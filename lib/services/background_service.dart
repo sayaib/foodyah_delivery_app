@@ -42,7 +42,6 @@ Future<void> initializeService() async {
       autoStart: false,
       onForeground: onStart,
       onBackground: onIosBackground,
-      //: 'com.example.foodyahdeliveryapp.foodyahDeliveryApp.location_task',
     ),
   );
 }
@@ -63,8 +62,10 @@ void onStart(ServiceInstance service) async {
   // --- Use a StreamSubscription instead of a Timer ---
   StreamSubscription<Position>? locationSubscription;
 
-  final socketUrl =
-      prefs.getString('SOCKET_SERVER_URL') ?? 'http://10.0.2.2:5050';
+  // Get the appropriate socket URL based on platform
+  final socketUrl = Platform.isAndroid
+      ? prefs.getString('SOCKET_SERVER_URL_ANDROID') ?? 'http://10.0.2.2:5050'
+      : prefs.getString('SOCKET_SERVER_URL_IOS') ?? 'http://localhost:5050';
 
   final socket = IO.io(socketUrl, <String, dynamic>{
     'transports': ['websocket'],
@@ -87,19 +88,20 @@ void onStart(ServiceInstance service) async {
 
     final locationSettings = Platform.isAndroid
         ? AndroidSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // Update every 10 meters
-      forceLocationManager: true,
-      intervalDuration: const Duration(seconds: 10), // Update every 10s
-    )
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10, // Update every 10 meters
+            forceLocationManager: true,
+            intervalDuration: const Duration(seconds: 10), // Update every 10s
+          )
         : AppleSettings(
-      accuracy: LocationAccuracy.high,
-      activityType: ActivityType.automotiveNavigation,
-      distanceFilter: 10, // Update every 10 meters
-      pauseLocationUpdatesAutomatically: true,
-      // IMPORTANT: This allows background updates
-      showBackgroundLocationIndicator: true,
-    );
+            accuracy: LocationAccuracy.high,
+            activityType: ActivityType.automotiveNavigation,
+            distanceFilter: 10, // Update every 10 meters
+            pauseLocationUpdatesAutomatically: true,
+            // IMPORTANT: These allow background updates on iOS
+            showBackgroundLocationIndicator: true,
+            allowBackgroundLocationUpdates: true,
+          );
 
     locationSubscription =
         Geolocator.getPositionStream(locationSettings: locationSettings)

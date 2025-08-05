@@ -8,12 +8,6 @@
        <string>To provide continuous location updates to the customer, this app needs to track your location even when it's closed or not in use. Your location is only shared during an active delivery.</string>
        <key>NSLocationTemporaryUsageDescriptionDictionary</key>
        <dict>
-           <key>YourPurposeKey</key>
-           <string>We need temporary access to your precise location to accurately start the delivery route.</string>
-       </dict>
-
-       <key>NSLocationTemporaryUsageDescriptionDictionary</key>
-       <dict>
            <key>deliveryRouteAccuracy</key>
            <string>We need temporary access to your precise location to accurately start the delivery route.</string>
        </dict>
@@ -28,10 +22,6 @@
       <key>BGTaskSchedulerPermittedIdentifiers</key>
       <array>
           <string>dev.flutter.background.refresh</string>
-      </array>
-
-      <key>BGTaskSchedulerPermittedIdentifiers</key>
-      <array>
           <string>com.example.foodyahdeliveryapp.foodyahDeliveryApp.location_task</string>
       </array>
 

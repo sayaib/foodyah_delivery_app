@@ -63,7 +63,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     setState(() => serviceRunning = isRunning);
   }
 
-  // MODIFIED: Integrated the permission flow.
+  // MODIFIED: Integrated the permission flow with improved iOS handling.
   Future<void> _toggleTracking(bool? value) async {
     if (value == null) return;
     setState(() {
@@ -72,25 +72,35 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     try {
       if (value) {
         // If turning ON, first request permission.
+        debugPrint("Requesting location permission...");
         final hasPermission = await LocationPermissionService
             .requestLocationPermission(context);
 
         if (!hasPermission) {
           // If permission is not granted, do not proceed.
           // The UI will not change to "ON".
+          debugPrint("Location permission denied");
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission is required for tracking')),
+          );
           return;
         }
 
+        debugPrint("Location permission granted, starting service...");
         // If permission is granted, proceed to start the service and tracking
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', true);
 
         if (!serviceRunning) {
+          debugPrint("Starting background service...");
           await _service.startService();
+          // Wait a moment for the service to fully start
+          await Future.delayed(const Duration(milliseconds: 500));
           setState(() => serviceRunning = true);
         }
+        
+        debugPrint("Invoking startLocationTracking...");
         _service.invoke("startLocationTracking");
-        debugPrint("UI: Invoked startLocationTracking");
         setState(() => isTracking = true);
       } else {
         // If turning OFF, no permission needed. Just stop.
@@ -100,6 +110,11 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         debugPrint("UI: Invoked stopLocationTracking");
         setState(() => isTracking = false);
       }
+    } catch (e) {
+      debugPrint("Error toggling tracking: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
     } finally {
       if (mounted) {
         setState(() {

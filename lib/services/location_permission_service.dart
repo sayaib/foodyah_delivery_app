@@ -1,5 +1,6 @@
 // lib/services/location_permission_service.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:io';
@@ -32,23 +33,40 @@ class LocationPermissionService {
   }
   static Future<void> _requestFullAccuracy() async {
     if (Platform.isIOS) {
-      final accuracy = await Geolocator.getLocationAccuracy();
-      if (accuracy == LocationAccuracyStatus.reduced) {
-        // Request temporary full accuracy
-        await Geolocator.requestTemporaryFullAccuracy(
-          // --- THIS IS THE FIX ---
-          purposeKey: "deliveryRouteAccuracy", // Must match the key in Info.plist
-        );
+      try {
+        debugPrint('Checking iOS location accuracy status...');
+        final accuracy = await Geolocator.getLocationAccuracy();
+        debugPrint('Current iOS location accuracy status: $accuracy');
+        
+        if (accuracy == LocationAccuracyStatus.reduced) {
+          debugPrint('iOS location accuracy is reduced, requesting temporary full accuracy');
+          // Request temporary full accuracy
+          final result = await Geolocator.requestTemporaryFullAccuracy(
+            purposeKey: "deliveryRouteAccuracy", // Must match the key in Info.plist
+          );
+          debugPrint('After request, iOS location accuracy status: $result');
+        } else {
+          debugPrint('iOS location accuracy is already precise');
+        }
+      } catch (e) {
+        debugPrint('Error requesting full accuracy on iOS: $e');
+        // Check if the error is related to the purposeKey
+        if (e.toString().contains('purposeKey')) {
+          debugPrint('Error might be related to the purposeKey in Info.plist');
+        }
       }
     }
   }
   // Main function to handle location permission requests.
   static Future<bool> requestLocationPermission(BuildContext context) async {
+    debugPrint("Requesting location permission...");
     var status = await Permission.location.status;
+    debugPrint("Current location permission status: $status");
 
     // FIXED: Use '==' for enum comparison instead of .isGranted
     if (status == PermissionStatus.granted) {
       // If permission is already granted, check for background permission
+      debugPrint("Location permission already granted, requesting full accuracy");
       await _requestFullAccuracy();
       return requestBackgroundLocationPermission(context);
     }
@@ -69,12 +87,32 @@ class LocationPermissionService {
     }
 
     // If denied or not determined, request it.
+    debugPrint("Requesting location permission from system...");
     var newStatus = await Permission.location.request();
+    debugPrint("After request, location permission status: $newStatus");
 
     // FIXED: Use '==' for enum comparison
     if (newStatus == PermissionStatus.granted) {
       // If granted, now request background permission
+      debugPrint("Location permission granted, now requesting background permission");
+      await _requestFullAccuracy();
       return requestBackgroundLocationPermission(context);
+    } else if (newStatus == PermissionStatus.denied) {
+      debugPrint("Location permission denied by user");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location permission is required for tracking')),
+      );
+    } else if (newStatus == PermissionStatus.permanentlyDenied) {
+      debugPrint("Location permission permanently denied");
+      await _showPermissionDialog(
+        context,
+        'Permission Required',
+        'Location permission is permanently denied. Please enable it from the app settings to continue.',
+        () {
+          Navigator.of(context).pop();
+          openAppSettings(); // Opens the app settings page
+        },
+      );
     }
 
     return false;
@@ -83,10 +121,13 @@ class LocationPermissionService {
   // Function to handle the "Always" / Background location permission
   static Future<bool> requestBackgroundLocationPermission(
       BuildContext context) async {
+    debugPrint("Requesting background location permission...");
     var status = await Permission.locationAlways.status;
+    debugPrint("Current background location permission status: $status");
 
     // FIXED: Use '==' for enum comparison
     if (status == PermissionStatus.granted) {
+      debugPrint("Background location permission already granted");
       return true; // Already granted
     }
 
@@ -114,11 +155,35 @@ class LocationPermissionService {
 
     if (userAgreed) {
       // If user agrees in our dialog, then show the system dialog.
+      debugPrint("User agreed to background location disclosure, requesting system permission");
       // FIXED: Awaited the request and then compared the resulting status.
       final newStatus = await Permission.locationAlways.request();
-      return newStatus == PermissionStatus.granted;
+      debugPrint("After request, background location permission status: $newStatus");
+      
+      if (newStatus == PermissionStatus.granted) {
+        debugPrint("Background location permission granted");
+        return true;
+      } else if (newStatus == PermissionStatus.denied) {
+        debugPrint("Background location permission denied by user");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Background location permission is required for continuous tracking')),
+        );
+      } else if (newStatus == PermissionStatus.permanentlyDenied) {
+        debugPrint("Background location permission permanently denied");
+        await _showPermissionDialog(
+          context,
+          'Permission Required',
+          'Background location permission is permanently denied. Please enable it from the app settings to continue.',
+          () {
+            Navigator.of(context).pop();
+            openAppSettings(); // Opens the app settings page
+          },
+        );
+      }
+      return false;
     } else {
       // User did not agree to the background permission disclosure.
+      debugPrint("User declined background location disclosure dialog");
       return false;
     }
   }

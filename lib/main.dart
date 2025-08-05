@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -27,9 +28,25 @@ Future<void> main() async {
 
   // ✅ Save socket URL for background isolate
   final prefs = await SharedPreferences.getInstance();
+  
+  // Set Android-specific URL
   await prefs.setString(
     'SOCKET_SERVER_URL_ANDROID',
     dotenv.env['SOCKET_SERVER_URL_ANDROID'] ?? 'http://10.0.2.2:5050',
+  );
+  
+  // Set iOS-specific URL
+  await prefs.setString(
+    'SOCKET_SERVER_URL_IOS',
+    dotenv.env['SOCKET_SERVER_URL_IOS'] ?? 'http://localhost:5050',
+  );
+  
+  // Set generic SOCKET_SERVER_URL based on platform
+  await prefs.setString(
+    'SOCKET_SERVER_URL',
+    Platform.isAndroid 
+      ? (dotenv.env['SOCKET_SERVER_URL_ANDROID'] ?? 'http://10.0.2.2:5050')
+      : (dotenv.env['SOCKET_SERVER_URL_IOS'] ?? 'http://localhost:5050'),
   );
 
   await initializeService();
