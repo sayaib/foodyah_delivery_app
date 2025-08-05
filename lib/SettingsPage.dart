@@ -71,14 +71,16 @@ class _SettingsPageState extends State<SettingsPage> {
       if (value) {
         // If turning ON, first request permission.
         debugPrint("Requesting location permission...");
-        final hasPermission = await LocationPermissionService
-            .requestLocationPermission(context);
+        final hasPermission =
+            await LocationPermissionService.requestLocationPermission(context);
 
         if (!hasPermission) {
           // If permission is not granted, do not proceed.
           debugPrint("Location permission denied");
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission is required for tracking')),
+            const SnackBar(
+              content: Text('Location permission is required for tracking'),
+            ),
           );
           return;
         }
@@ -95,7 +97,7 @@ class _SettingsPageState extends State<SettingsPage> {
           await Future.delayed(const Duration(milliseconds: 500));
           setState(() => serviceRunning = true);
         }
-        
+
         debugPrint("Invoking startLocationTracking...");
         _service.invoke("startLocationTracking");
         setState(() => isTracking = true);
@@ -109,9 +111,9 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     } catch (e) {
       debugPrint("Error toggling tracking: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     } finally {
       if (mounted) {
         setState(() {
@@ -127,7 +129,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
     // Then, stop the entire service itself
     if (await _service.isRunning()) {
-      _service.invoke("stopService"); // Use invoke to tell the service to stop itself
+      _service.invoke(
+        "stopService",
+      ); // Use invoke to tell the service to stop itself
     }
 
     // Update preferences and UI state
@@ -140,10 +144,13 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
-  Future<void> _openGoogleMapDirections(
-      {required double lat, required double lng}) async {
-    final Uri googleMapUrl =
-    Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$lat,$lng");
+  Future<void> _openGoogleMapDirections({
+    required double lat,
+    required double lng,
+  }) async {
+    final Uri googleMapUrl = Uri.parse(
+      "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng",
+    );
 
     if (!await launchUrl(googleMapUrl, mode: LaunchMode.externalApplication)) {
       debugPrint("Could not launch Google Maps.");
@@ -158,11 +165,31 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: Colors.deepOrange,
-        elevation: 0,
-        title: const Text('Foodyah Settings'),
+        elevation: 4,
+        shadowColor: Colors.deepOrange.withOpacity(0.4),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.settings, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Foodyah Settings',
+              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.stop_circle_outlined),
@@ -177,225 +204,440 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Location Tracking Card
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+              // Note about location tracking moved to dashboard
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.location_on,
-                            color: Colors.deepOrange,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 8),
                           const Text(
-                            'Location Tracking',
+                            'Location Controls',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: Colors.blue,
                             ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Location tracking controls are now available in the main dashboard for easier access.',
+                            style: TextStyle(fontSize: 14),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Control whether your location is being shared with the Foodyah platform',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                      const SizedBox(height: 16),
-                      RadioListTile<bool>(
-                        title: const Text('ON - Sending Location'),
-                        subtitle: const Text('Your location will be shared with the platform'),
-                        value: true,
-                        groupValue: isTracking,
-                        onChanged: _isCheckingPermission ? null : _toggleTracking,
-                        activeColor: Colors.green,
-                      ),
-                      RadioListTile<bool>(
-                        title: const Text('OFF - Not Sending Location'),
-                        subtitle: const Text('Your location will not be shared'),
-                        value: false,
-                        groupValue: isTracking,
-                        onChanged: _isCheckingPermission ? null : _toggleTracking,
-                        activeColor: Colors.red,
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: serviceRunning ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // App Information Card
+              Card(
+                elevation: 4,
+                shadowColor: Colors.deepOrange.withOpacity(0.2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.white, Colors.orange.withOpacity(0.05)],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Icon(
-                              serviceRunning ? Icons.check_circle : Icons.error,
-                              color: serviceRunning ? Colors.green : Colors.red,
-                              size: 20,
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.deepOrange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.info_outline,
+                                color: Colors.deepOrange,
+                                size: 24,
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              serviceRunning
-                                  ? 'Background service is RUNNING'
-                                  : 'Background service is STOPPED',
+                            const SizedBox(width: 12),
+                            const Text(
+                              'App Information',
                               style: TextStyle(
-                                color: serviceRunning ? Colors.green : Colors.red,
+                                fontSize: 20,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Version',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.deepOrange.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text(
+                                      '1.1.0',
+                                      style: TextStyle(
+                                        color: Colors.deepOrange,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 24),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: const Text(
+                                  'Privacy Policy',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                trailing: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: Colors.deepOrange,
+                                    ),
+                                  ),
+                                ),
+                                onTap: () {
+                                  // Launch privacy policy URL
+                                  launchUrl(
+                                    Uri.parse(
+                                      'https://foodyah.com/privacy-policy',
+                                    ),
+                                  );
+                                },
+                              ),
+                              const Divider(height: 4),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: const Text(
+                                  'Terms of Service',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                trailing: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: Colors.deepOrange,
+                                    ),
+                                  ),
+                                ),
+                                onTap: () {
+                                  // Launch terms of service URL
+                                  launchUrl(
+                                    Uri.parse(
+                                      'https://foodyah.com/terms-of-service',
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
-              // App Information Card
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.deepOrange,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'App Information',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const ListTile(
-                        title: Text('Version'),
-                        trailing: Text('1.1.0'),
-                        dense: true,
-                      ),
-                      const Divider(),
-                      ListTile(
-                        title: const Text('Privacy Policy'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        dense: true,
-                        onTap: () {
-                          // Launch privacy policy URL
-                          launchUrl(Uri.parse('https://foodyah.com/privacy-policy'));
-                        },
-                      ),
-                      const Divider(),
-                      ListTile(
-                        title: const Text('Terms of Service'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        dense: true,
-                        onTap: () {
-                          // Launch terms of service URL
-                          launchUrl(Uri.parse('https://foodyah.com/terms-of-service'));
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 20),
-              
+
               // Support Card
               Card(
                 elevation: 4,
+                shadowColor: Colors.deepOrange.withOpacity(0.2),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.support_agent,
-                            color: Colors.deepOrange,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Support',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.white, Colors.green.withOpacity(0.05)],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.support_agent,
+                                color: Colors.green,
+                                size: 24,
+                              ),
                             ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Support',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ListTile(
-                        title: const Text('Contact Support'),
-                        subtitle: const Text('Get help with your account or deliveries'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        dense: true,
-                        onTap: () {
-                          // Launch support email or form
-                          launchUrl(Uri.parse('mailto:support@foodyah.com'));
-                        },
-                      ),
-                      const Divider(),
-                      ListTile(
-                        title: const Text('Report an Issue'),
-                        subtitle: const Text('Let us know if something isn\'t working'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        dense: true,
-                        onTap: () {
-                          // Launch issue reporting form
-                          launchUrl(Uri.parse('https://foodyah.com/report-issue'));
-                        },
-                      ),
-                    ],
+                          child: Column(
+                            children: [
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.headset_mic,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                                title: const Text(
+                                  'Contact Support',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                subtitle: const Text(
+                                  'Get help with your account or deliveries',
+                                ),
+                                trailing: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                ),
+                                onTap: () {
+                                  // Launch support email or form
+                                  launchUrl(
+                                    Uri.parse('mailto:support@foodyah.com'),
+                                  );
+                                },
+                              ),
+                              const Divider(height: 24),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.bug_report,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                title: const Text(
+                                  'Report an Issue',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                subtitle: const Text(
+                                  'Let us know if something isn\'t working',
+                                ),
+                                trailing: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ),
+                                onTap: () {
+                                  // Launch issue reporting form
+                                  launchUrl(
+                                    Uri.parse(
+                                      'https://foodyah.com/report-issue',
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              
+
               if (_isCheckingPermission)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16.0),
-                  child: Row(
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 16.0),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12.0,
+                    horizontal: 16.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 3),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: Colors.blue,
+                        ),
                       ),
-                      SizedBox(width: 10),
-                      Text("Checking permissions..."),
+                      SizedBox(width: 12),
+                      Text(
+                        "Checking permissions...",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              
-              const SizedBox(height: 20),
-              Center(
-                child: Text(
-                  '© ${DateTime.now().year} Foodyah. All rights reserved.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+
+              const SizedBox(height: 30),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.deepOrange.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.restaurant_menu,
+                          color: Colors.deepOrange,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '© ${DateTime.now().year} Foodyah. All rights reserved.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.deepOrange.withOpacity(0.8),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

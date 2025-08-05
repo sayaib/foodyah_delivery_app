@@ -14,7 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 // Screens
-import 'package:foodyah_delivery_app/screens/DashboardPage.dart';
+import 'package:foodyah_delivery_app/screens/dashboard_page.dart';
 import 'package:foodyah_delivery_app/screens/auth/otp_verification_page.dart';
 import 'package:foodyah_delivery_app/screens/Landing_page.dart';
 import 'SettingsPage.dart'; // Assuming it's moved to /screens//

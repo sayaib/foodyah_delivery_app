@@ -150,6 +150,13 @@ void onStart(ServiceInstance service) async {
     prefs.setBool('isTracking', true);
     startLocationStream(); // Start the stream
     debugPrint("📍 BG_SERVICE: Start location tracking command received.");
+    
+    // If we have order data in the event, we can use it here
+    if (event != null && event['orderId'] != null) {
+      debugPrint("📦 BG_SERVICE: Tracking for order: ${event['orderId']}");
+      // You could store the current order ID if needed
+      prefs.setString('currentOrderId', event['orderId']);
+    }
   });
 
   service.on('stopLocationTracking').listen((event) {
@@ -169,7 +176,7 @@ void onStart(ServiceInstance service) async {
   });
 }
 
-// FIXED: This function now correctly invokes the UI to show a dialog.
+// This function correctly invokes the UI to show a dialog.
 void _handleDeliveryRequest(dynamic data, ServiceInstance service) {
   debugPrint(
       "📦 BG_SERVICE: Delivery request received: ${data['restaurantName'] ?? 'Unknown'}");
@@ -181,6 +188,12 @@ void _handleDeliveryRequest(dynamic data, ServiceInstance service) {
     {
       "title": "New Delivery Request!",
       "body": "From ${data['restaurantName'] ?? 'Unknown Restaurant'}",
+      "orderId": data['orderId'] ?? 'unknown_order',
+      "restaurantId": data['restaurantId'] ?? 'unknown_restaurant',
+      "restaurantName": data['restaurantName'] ?? 'Unknown Restaurant',
+      "restaurantAddress": data['restaurantAddress'] ?? 'Unknown Address',
+      "customerAddress": data['customerAddress'] ?? 'Unknown Address',
+      "timestamp": DateTime.now().toIso8601String(),
     },
   );
 }
