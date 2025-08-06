@@ -27,23 +27,27 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _initialize();
     _setupServiceListener();
-    
+
     // Listen to tracking status changes
     _trackingStatusService.trackingStatusStream.listen((status) {
       if (mounted) {
         setState(() {
           isTracking = status;
-          debugPrint('SettingsPage: isTracking updated from stream to $isTracking');
+          debugPrint(
+            'SettingsPage: isTracking updated from stream to $isTracking',
+          );
         });
       }
     });
-    
+
     // Listen to service running status changes
     _trackingStatusService.serviceRunningStream.listen((status) {
       if (mounted) {
         setState(() {
           serviceRunning = status;
-          debugPrint('SettingsPage: serviceRunning updated from stream to $serviceRunning');
+          debugPrint(
+            'SettingsPage: serviceRunning updated from stream to $serviceRunning',
+          );
         });
       }
     });
@@ -138,7 +142,7 @@ class _SettingsPageState extends State<SettingsPage> {
         // If permission is granted, proceed to start the service and tracking
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', true);
-        
+
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(true);
 
@@ -159,7 +163,7 @@ class _SettingsPageState extends State<SettingsPage> {
         // If turning OFF, no permission needed. Just stop.
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', false);
-        
+
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(false);
         _service.invoke("stopLocationTracking");
@@ -199,7 +203,7 @@ class _SettingsPageState extends State<SettingsPage> {
       serviceRunning = false;
       isTracking = false;
     });
-    
+
     // Update the tracking status service
     await _trackingStatusService.updateTrackingStatus(false);
     _trackingStatusService.updateServiceRunningStatus(false);
@@ -227,17 +231,17 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text("Foodyah Settings"),
-        automaticallyImplyLeading: false, // Hides the back button
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.stop_circle_outlined),
-            onPressed: _stopService,
-            tooltip: 'Stop Background Service',
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   title: const Text("Foodyah Settings"),
+      //   automaticallyImplyLeading: false, // Hides the back button
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.stop_circle_outlined),
+      //       onPressed: _stopService,
+      //       tooltip: 'Stop Background Service',
+      //     ),
+      //   ],
+      // ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

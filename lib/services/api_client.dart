@@ -1,13 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiClient {
-
+  // Use HTTPS for production environments
+  static final bool isDebug = kDebugMode;
+  
   static final String? baseUrl = Platform.isAndroid
-      ? dotenv.env['API_BASE_URL_ANDROID']
-      : dotenv.env['API_BASE_URL_IOS'];
+      ? isDebug 
+          ? dotenv.env['API_BASE_URL_ANDROID']
+          : dotenv.env['API_BASE_URL_ANDROID_PROD'] ?? 'https://api.foodyah.com'
+      : isDebug
+          ? dotenv.env['API_BASE_URL_IOS']
+          : dotenv.env['API_BASE_URL_IOS_PROD'] ?? 'https://api.foodyah.com';
 
 
   /// Global GET request

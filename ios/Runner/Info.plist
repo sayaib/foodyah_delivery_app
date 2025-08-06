@@ -22,7 +22,7 @@
       <key>BGTaskSchedulerPermittedIdentifiers</key>
       <array>
           <string>dev.flutter.background.refresh</string>
-          <string>com.example.foodyahdeliveryapp.foodyahDeliveryApp.location_task</string>
+          <string>com.foodyah.delivery.location_task</string>
       </array>
 
 	<key>CFBundleDevelopmentRegion</key>

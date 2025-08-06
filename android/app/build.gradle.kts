@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.foodyah_delivery_app.foodyah_delivery_app"
+    namespace = "com.foodyah.delivery"
     compileSdk = flutter.compileSdkVersion
 
 //    ndkVersion = flutter.ndkVersion
@@ -23,8 +23,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.foodyah_delivery_app.foodyah_delivery_app"
+        // Using proper domain-style package name for Play Store
+        applicationId = "com.foodyah.delivery"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

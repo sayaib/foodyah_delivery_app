@@ -33,23 +33,27 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     _initialize();
     _setupServiceListener();
     _loadDriverId();
-    
+
     // Listen to tracking status changes
     _trackingStatusService.trackingStatusStream.listen((status) {
       if (mounted) {
         setState(() {
           isTracking = status;
-          debugPrint('OrderInProgressPage: isTracking updated from stream to $isTracking');
+          debugPrint(
+            'OrderInProgressPage: isTracking updated from stream to $isTracking',
+          );
         });
       }
     });
-    
+
     // Listen to service running status changes
     _trackingStatusService.serviceRunningStream.listen((status) {
       if (mounted) {
         setState(() {
           serviceRunning = status;
-          debugPrint('OrderInProgressPage: serviceRunning updated from stream to $serviceRunning');
+          debugPrint(
+            'OrderInProgressPage: serviceRunning updated from stream to $serviceRunning',
+          );
         });
       }
     });
@@ -61,7 +65,9 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     // Refresh status when page becomes visible
     _loadTrackingStatus();
     _checkServiceStatus();
-    debugPrint('OrderInProgressPage: didChangeDependencies called, refreshing status');
+    debugPrint(
+      'OrderInProgressPage: didChangeDependencies called, refreshing status',
+    );
   }
 
   @override
@@ -106,23 +112,27 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
   }
 
   // Add a timestamp to track when we last checked the service status
-  DateTime _lastServiceCheck = DateTime.now().subtract(const Duration(seconds: 1));
-  
+  DateTime _lastServiceCheck = DateTime.now().subtract(
+    const Duration(seconds: 1),
+  );
+
   Future<void> _checkServiceStatus() async {
     if (!mounted) return;
-    
+
     // Debounce the service status check to prevent too many calls
     final now = DateTime.now();
     if (now.difference(_lastServiceCheck).inMilliseconds < 300) {
       return; // Skip if we checked too recently
     }
     _lastServiceCheck = now;
-    
+
     final isRunning = await _service.isRunning();
     if (mounted && serviceRunning != isRunning) {
       setState(() {
         serviceRunning = isRunning;
-        debugPrint('OrderInProgressPage: serviceRunning updated to $serviceRunning');
+        debugPrint(
+          'OrderInProgressPage: serviceRunning updated to $serviceRunning',
+        );
       });
       // Update the service running status in the tracking status service
       _trackingStatusService.updateServiceRunningStatus(isRunning);
@@ -159,7 +169,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         // If permission is granted, proceed to start the service and tracking
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', true);
-        
+
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(true);
 
@@ -183,7 +193,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         // If turning OFF, no permission needed. Just stop.
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', false);
-        
+
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(false);
         _service.invoke("stopLocationTracking");
@@ -216,7 +226,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
       _service.invoke(
         "stopService",
       ); // Use invoke to tell the service to stop itself
-      
+
       // Update the service running status in the tracking status service
       setState(() => serviceRunning = false);
       _trackingStatusService.updateServiceRunningStatus(false);
@@ -320,17 +330,17 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
       children: [
         Scaffold(
           backgroundColor: Colors.grey[50],
-          appBar: AppBar(
-            title: const Text("Order In Progress"),
-            automaticallyImplyLeading: false, // Hides the back button
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.stop_circle_outlined),
-                onPressed: _stopService,
-                tooltip: 'Stop Background Service',
-              ),
-            ],
-          ),
+          // appBar: AppBar(
+          //   title: const Text("Order In Progress"),
+          //   automaticallyImplyLeading: false, // Hides the back button
+          //   actions: [
+          //     IconButton(
+          //       icon: const Icon(Icons.stop_circle_outlined),
+          //       onPressed: _stopService,
+          //       tooltip: 'Stop Background Service',
+          //     ),
+          //   ],
+          // ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -441,52 +451,52 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: serviceRunning
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: serviceRunning
-                                    ? Colors.green.withOpacity(0.3)
-                                    : Colors.red.withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  serviceRunning
-                                      ? Icons.cloud_done
-                                      : Icons.cloud_off,
-                                  color: serviceRunning
-                                      ? Colors.green
-                                      : Colors.red,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 10),
-                                Flexible(
-                                  child: Text(
-                                    serviceRunning
-                                        ? 'Background service is RUNNING'
-                                        : 'Background service is STOPPED',
-                                    style: TextStyle(
-                                      color: serviceRunning
-                                          ? Colors.green
-                                          : Colors.red,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          // Container(
+                          //   padding: const EdgeInsets.symmetric(
+                          //     horizontal: 16,
+                          //     vertical: 10,
+                          //   ),
+                          //   decoration: BoxDecoration(
+                          //     color: serviceRunning
+                          //         ? Colors.green.withOpacity(0.1)
+                          //         : Colors.red.withOpacity(0.1),
+                          //     borderRadius: BorderRadius.circular(12),
+                          //     border: Border.all(
+                          //       color: serviceRunning
+                          //           ? Colors.green.withOpacity(0.3)
+                          //           : Colors.red.withOpacity(0.3),
+                          //       width: 1,
+                          //     ),
+                          //   ),
+                          // child: Row(
+                          //   children: [
+                          // Icon(
+                          //   serviceRunning
+                          //       ? Icons.cloud_done
+                          //       : Icons.cloud_off,
+                          //   color: serviceRunning
+                          //       ? Colors.green
+                          //       : Colors.red,
+                          //   size: 20,
+                          // ),
+                          // const SizedBox(width: 10),
+                          // Flexible(
+                          //   child: Text(
+                          //     serviceRunning
+                          //         ? 'Background service is RUNNING'
+                          //         : 'Background service is STOPPED',
+                          //     style: TextStyle(
+                          //       color: serviceRunning
+                          //           ? Colors.green
+                          //           : Colors.red,
+                          //       fontWeight: FontWeight.bold,
+                          //     ),
+                          //     overflow: TextOverflow.ellipsis,
+                          //   ),
+                          // ),
+                          // ],
+                          // ),
+                          // ),
                         ],
                       ),
                     ),

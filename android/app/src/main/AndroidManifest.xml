@@ -1,6 +1,6 @@
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.foodyah_delivery_app.foodyah_delivery_app"
+    package="com.foodyah.delivery"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -10,10 +10,10 @@
 
 
     <application
-        android:label="untitled3"
+        android:label="Foodyah Delivery"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="false"
         android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
         >

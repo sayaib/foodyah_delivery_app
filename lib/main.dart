@@ -30,24 +30,25 @@ Future<void> main() async {
   // ✅ Save socket URL for background isolate
   final prefs = await SharedPreferences.getInstance();
   
-  // Set Android-specific URL
-  await prefs.setString(
-    'SOCKET_SERVER_URL_ANDROID',
-    dotenv.env['SOCKET_SERVER_URL_ANDROID'] ?? 'http://10.0.2.2:5050',
-  );
+  // Set Android-specific URL - use HTTPS for production, HTTP only for local development
+  final isDebug = kDebugMode;
+  final androidSocketUrl = isDebug 
+      ? (dotenv.env['SOCKET_SERVER_URL_ANDROID'] ?? 'http://10.0.2.2:5050')
+      : (dotenv.env['SOCKET_SERVER_URL_ANDROID_PROD'] ?? 'https://api.foodyah.com');
   
-  // Set iOS-specific URL
-  await prefs.setString(
-    'SOCKET_SERVER_URL_IOS',
-    dotenv.env['SOCKET_SERVER_URL_IOS'] ?? 'http://localhost:5050',
-  );
+  await prefs.setString('SOCKET_SERVER_URL_ANDROID', androidSocketUrl);
+  
+  // Set iOS-specific URL - use HTTPS for production, HTTP only for local development
+  final iosSocketUrl = isDebug
+      ? (dotenv.env['SOCKET_SERVER_URL_IOS'] ?? 'http://localhost:5050')
+      : (dotenv.env['SOCKET_SERVER_URL_IOS_PROD'] ?? 'https://api.foodyah.com');
+      
+  await prefs.setString('SOCKET_SERVER_URL_IOS', iosSocketUrl);
   
   // Set generic SOCKET_SERVER_URL based on platform
   await prefs.setString(
     'SOCKET_SERVER_URL',
-    Platform.isAndroid 
-      ? (dotenv.env['SOCKET_SERVER_URL_ANDROID'] ?? 'http://10.0.2.2:5050')
-      : (dotenv.env['SOCKET_SERVER_URL_IOS'] ?? 'http://localhost:5050'),
+    Platform.isAndroid ? androidSocketUrl : iosSocketUrl,
   );
 
   await initializeService();

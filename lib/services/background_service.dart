@@ -64,9 +64,10 @@ void onStart(ServiceInstance service) async {
   StreamSubscription<Position>? locationSubscription;
 
   // Get the appropriate socket URL based on platform
+  // The URLs should already be set in main.dart with proper HTTPS for production
   final socketUrl = Platform.isAndroid
-      ? prefs.getString('SOCKET_SERVER_URL_ANDROID') ?? 'http://10.0.2.2:5050'
-      : prefs.getString('SOCKET_SERVER_URL_IOS') ?? 'http://localhost:5050';
+      ? prefs.getString('SOCKET_SERVER_URL_ANDROID') ?? 'https://api.foodyah.com'
+      : prefs.getString('SOCKET_SERVER_URL_IOS') ?? 'https://api.foodyah.com';
 
   final socket = IO.io(socketUrl, <String, dynamic>{
     'transports': ['websocket'],
