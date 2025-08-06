@@ -66,7 +66,8 @@ void onStart(ServiceInstance service) async {
   // Get the appropriate socket URL based on platform
   // The URLs should already be set in main.dart with proper HTTPS for production
   final socketUrl = Platform.isAndroid
-      ? prefs.getString('SOCKET_SERVER_URL_ANDROID') ?? 'https://api.foodyah.com'
+      ? prefs.getString('SOCKET_SERVER_URL_ANDROID') ??
+            'https://api.foodyah.com'
       : prefs.getString('SOCKET_SERVER_URL_IOS') ?? 'https://api.foodyah.com';
 
   final socket = IO.io(socketUrl, <String, dynamic>{
@@ -109,15 +110,17 @@ void onStart(ServiceInstance service) async {
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
           (Position position) {
             final driverId = prefs.getString('driverId') ?? 'driver_007';
+            final orderId = prefs.getString('currentOrderId') ?? '';
 
             if (socket.connected) {
               socket.emit('updateLocation', {
                 'driverId': driverId,
                 'latitude': position.latitude,
                 'longitude': position.longitude,
+                'orderId': orderId,
               });
               debugPrint(
-                '📍 BG_SERVICE: Location sent: ${position.latitude}, ${position.longitude}',
+                '📍 BG_SERVICE: Location sent: ${position.latitude}, ${position.longitude}, orderId: $orderId',
               );
             } else {
               debugPrint(
