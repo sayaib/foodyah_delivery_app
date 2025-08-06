@@ -61,6 +61,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     // Refresh status when page becomes visible
     _loadTrackingStatus();
     _checkServiceStatus();
+    debugPrint('OrderInProgressPage: didChangeDependencies called, refreshing status');
   }
 
   @override
@@ -104,15 +105,28 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     });
   }
 
+  // Add a timestamp to track when we last checked the service status
+  DateTime _lastServiceCheck = DateTime.now().subtract(const Duration(seconds: 1));
+  
   Future<void> _checkServiceStatus() async {
     if (!mounted) return;
+    
+    // Debounce the service status check to prevent too many calls
+    final now = DateTime.now();
+    if (now.difference(_lastServiceCheck).inMilliseconds < 300) {
+      return; // Skip if we checked too recently
+    }
+    _lastServiceCheck = now;
+    
     final isRunning = await _service.isRunning();
-    setState(() {
-      serviceRunning = isRunning;
-      debugPrint('OrderInProgressPage: serviceRunning updated to $serviceRunning');
-    });
-    // Update the service running status in the tracking status service
-    _trackingStatusService.updateServiceRunningStatus(isRunning);
+    if (mounted && serviceRunning != isRunning) {
+      setState(() {
+        serviceRunning = isRunning;
+        debugPrint('OrderInProgressPage: serviceRunning updated to $serviceRunning');
+      });
+      // Update the service running status in the tracking status service
+      _trackingStatusService.updateServiceRunningStatus(isRunning);
+    }
   }
 
   // MODIFIED: Integrated the permission flow with improved iOS handling.
@@ -300,6 +314,8 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Check service status when building the UI
+    _checkServiceStatus();
     return Stack(
       children: [
         Scaffold(

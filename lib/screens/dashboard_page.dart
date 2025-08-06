@@ -89,6 +89,14 @@ class _DashboardPageState extends State<DashboardPage> {
     // Refresh tracking status when switching tabs
     _loadTrackingStatus();
     _checkServiceStatus();
+    debugPrint('Dashboard: Tab switched to $index, refreshing status');
+    
+    // Force refresh the status after a short delay to ensure UI is updated
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _checkServiceStatus();
+      }
+    });
   }
 
   Future<void> _initialize() async {
@@ -108,15 +116,28 @@ class _DashboardPageState extends State<DashboardPage> {
     await _trackingStatusService.updateTrackingStatus(status);
   }
 
+  // Add a timestamp to track when we last checked the service status
+  DateTime _lastServiceCheck = DateTime.now().subtract(const Duration(seconds: 1));
+  
   Future<void> _checkServiceStatus() async {
     if (!mounted) return;
+    
+    // Debounce the service status check to prevent too many calls
+    final now = DateTime.now();
+    if (now.difference(_lastServiceCheck).inMilliseconds < 300) {
+      return; // Skip if we checked too recently
+    }
+    _lastServiceCheck = now;
+    
     final isRunning = await _service.isRunning();
-    setState(() {
-      serviceRunning = isRunning;
-      debugPrint('Dashboard: serviceRunning updated to $serviceRunning');
-    });
-    // Also update the service running status in the tracking status service
-    _trackingStatusService.updateServiceRunningStatus(isRunning);
+    if (mounted && serviceRunning != isRunning) {
+      setState(() {
+        serviceRunning = isRunning;
+        debugPrint('Dashboard: serviceRunning updated to $serviceRunning');
+      });
+      // Also update the service running status in the tracking status service
+      _trackingStatusService.updateServiceRunningStatus(isRunning);
+    }
   }
 
   Future<void> _loadDriverId() async {

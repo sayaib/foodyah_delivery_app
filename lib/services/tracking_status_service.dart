@@ -1,5 +1,6 @@
 // lib/services/tracking_status_service.dart
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A service to manage tracking status across the app
@@ -43,8 +44,12 @@ class TrackingStatusService {
 
   // Update service running status
   void updateServiceRunningStatus(bool isRunning) {
-    _isServiceRunning = isRunning;
-    _serviceRunningController.add(isRunning);
+    // Only update and broadcast if the status has changed
+    if (_isServiceRunning != isRunning) {
+      _isServiceRunning = isRunning;
+      _serviceRunningController.add(isRunning);
+      debugPrint('TrackingStatusService: Service running status updated to $isRunning');
+    }
   }
 
   // Dispose resources
