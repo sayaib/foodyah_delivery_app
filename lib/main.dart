@@ -19,6 +19,7 @@ import 'package:foodyah_delivery_app/screens/auth/otp_verification_page.dart';
 import 'package:foodyah_delivery_app/screens/Landing_page.dart';
 import 'SettingsPage.dart'; // Assuming it's moved to /screens//
 import 'services/background_service.dart';
+import 'services/tracking_status_service.dart';
 
 
 
@@ -51,6 +52,8 @@ Future<void> main() async {
 
   await initializeService();
 
+  // Initialize the TrackingStatusService
+  await TrackingStatusService().initialize();
 
   final storage = FlutterSecureStorage();
   final token = await storage.read(key: 'jwt_token');

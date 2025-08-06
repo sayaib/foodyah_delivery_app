@@ -5,8 +5,9 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// Import the new permission service
-import 'package:foodyah_delivery_app/services/location_permission_service.dart'; // Update with your project name
+// Import the services
+import 'package:foodyah_delivery_app/services/location_permission_service.dart';
+import 'package:foodyah_delivery_app/services/tracking_status_service.dart';
 
 class OrderInProgressPage extends StatefulWidget {
   const OrderInProgressPage({super.key});
@@ -24,6 +25,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
   final FlutterBackgroundService _service = FlutterBackgroundService();
   final _storage = const FlutterSecureStorage();
   String _driverId = "";
+  final TrackingStatusService _trackingStatusService = TrackingStatusService();
 
   @override
   void initState() {
@@ -31,6 +33,42 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     _initialize();
     _setupServiceListener();
     _loadDriverId();
+    
+    // Listen to tracking status changes
+    _trackingStatusService.trackingStatusStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          isTracking = status;
+          debugPrint('OrderInProgressPage: isTracking updated from stream to $isTracking');
+        });
+      }
+    });
+    
+    // Listen to service running status changes
+    _trackingStatusService.serviceRunningStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          serviceRunning = status;
+          debugPrint('OrderInProgressPage: serviceRunning updated from stream to $serviceRunning');
+        });
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh status when page becomes visible
+    _loadTrackingStatus();
+    _checkServiceStatus();
+  }
+
+  @override
+  void didUpdateWidget(OrderInProgressPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refresh status when widget updates
+    _loadTrackingStatus();
+    _checkServiceStatus();
   }
 
   Future<void> _loadDriverId() async {
@@ -57,13 +95,24 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
   }
 
   Future<void> _loadTrackingStatus() async {
+    if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
-    setState(() => isTracking = prefs.getBool('isTracking') ?? false);
+    final status = prefs.getBool('isTracking') ?? false;
+    setState(() {
+      isTracking = status;
+      debugPrint('OrderInProgressPage: isTracking updated to $isTracking');
+    });
   }
 
   Future<void> _checkServiceStatus() async {
+    if (!mounted) return;
     final isRunning = await _service.isRunning();
-    setState(() => serviceRunning = isRunning);
+    setState(() {
+      serviceRunning = isRunning;
+      debugPrint('OrderInProgressPage: serviceRunning updated to $serviceRunning');
+    });
+    // Update the service running status in the tracking status service
+    _trackingStatusService.updateServiceRunningStatus(isRunning);
   }
 
   // MODIFIED: Integrated the permission flow with improved iOS handling.
@@ -96,6 +145,9 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         // If permission is granted, proceed to start the service and tracking
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', true);
+        
+        // Update tracking status service
+        await _trackingStatusService.updateTrackingStatus(true);
 
         // Save driver ID to shared preferences for background service
         await prefs.setString('driverId', _driverId);
@@ -106,6 +158,8 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
           // Wait a moment for the service to fully start
           await Future.delayed(const Duration(milliseconds: 500));
           setState(() => serviceRunning = true);
+          // Update the service running status in the tracking status service
+          _trackingStatusService.updateServiceRunningStatus(true);
         }
 
         debugPrint("Invoking startLocationTracking...");
@@ -115,6 +169,9 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         // If turning OFF, no permission needed. Just stop.
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', false);
+        
+        // Update tracking status service
+        await _trackingStatusService.updateTrackingStatus(false);
         _service.invoke("stopLocationTracking");
         debugPrint("UI: Invoked stopLocationTracking");
         setState(() => isTracking = false);
@@ -145,6 +202,10 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
       _service.invoke(
         "stopService",
       ); // Use invoke to tell the service to stop itself
+      
+      // Update the service running status in the tracking status service
+      setState(() => serviceRunning = false);
+      _trackingStatusService.updateServiceRunningStatus(false);
     }
 
     // Update preferences and UI state
@@ -243,17 +304,17 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
       children: [
         Scaffold(
           backgroundColor: Colors.grey[50],
-          // appBar: AppBar(
-          //   title: const Text("Order In Progress"),
-          //   automaticallyImplyLeading: false, // Hides the back button
-          //   actions: [
-          //     IconButton(
-          //       icon: const Icon(Icons.stop_circle_outlined),
-          //       onPressed: _stopService,
-          //       tooltip: 'Stop Background Service',
-          //     ),
-          //   ],
-          // ),
+          appBar: AppBar(
+            title: const Text("Order In Progress"),
+            automaticallyImplyLeading: false, // Hides the back button
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.stop_circle_outlined),
+                onPressed: _stopService,
+                tooltip: 'Stop Background Service',
+              ),
+            ],
+          ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(

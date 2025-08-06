@@ -25,7 +25,8 @@ Future<void> initializeService() async {
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
-      AndroidFlutterLocalNotificationsPlugin>()
+        AndroidFlutterLocalNotificationsPlugin
+      >()
       ?.createNotificationChannel(channel);
 
   await service.configure(
@@ -91,7 +92,7 @@ void onStart(ServiceInstance service) async {
             accuracy: LocationAccuracy.high,
             distanceFilter: 10, // Update every 10 meters
             forceLocationManager: true,
-            intervalDuration: const Duration(seconds: 10), // Update every 10s
+            intervalDuration: const Duration(seconds: 20), // Update every 10s
           )
         : AppleSettings(
             accuracy: LocationAccuracy.high,
@@ -104,41 +105,46 @@ void onStart(ServiceInstance service) async {
           );
 
     locationSubscription =
-        Geolocator.getPositionStream(locationSettings: locationSettings)
-            .listen((Position position) {
-          final driverId = prefs.getString('driverId') ?? 'driver_007';
+        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+          (Position position) {
+            final driverId = prefs.getString('driverId') ?? 'driver_007';
 
-          if (socket.connected) {
-            socket.emit('updateLocation', {
-              'driverId': driverId,
-              'latitude': position.latitude,
-              'longitude': position.longitude,
-            });
-            debugPrint(
-                '📍 BG_SERVICE: Location sent: ${position.latitude}, ${position.longitude}');
-          } else {
-            debugPrint('⚠️ BG_SERVICE: Cannot send location, socket not connected.');
-          }
+            if (socket.connected) {
+              socket.emit('updateLocation', {
+                'driverId': driverId,
+                'latitude': position.latitude,
+                'longitude': position.longitude,
+              });
+              debugPrint(
+                '📍 BG_SERVICE: Location sent: ${position.latitude}, ${position.longitude}',
+              );
+            } else {
+              debugPrint(
+                '⚠️ BG_SERVICE: Cannot send location, socket not connected.',
+              );
+            }
 
-          // Update notification on both platforms
-          notification.show(
-            888,
-            'Delivery Service Active',
-            'Tracking... Last update: ${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}',
-            const NotificationDetails(
-              android: AndroidNotificationDetails(
-                'location_channel',
-                'Location Tracking',
-                icon: '@mipmap/ic_launcher',
-                ongoing: true,
+            // Update notification on both platforms
+            notification.show(
+              888,
+              'Delivery Service Active',
+              'Tracking... Last update: ${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+              const NotificationDetails(
+                android: AndroidNotificationDetails(
+                  'location_channel',
+                  'Location Tracking',
+                  icon: '@mipmap/ic_launcher',
+                  ongoing: true,
+                ),
               ),
-            ),
-          );
-        }, onError: (error) {
-          debugPrint('BG_SERVICE: Error in location stream: $error');
-          locationSubscription?.cancel();
-          locationSubscription = null;
-        });
+            );
+          },
+          onError: (error) {
+            debugPrint('BG_SERVICE: Error in location stream: $error');
+            locationSubscription?.cancel();
+            locationSubscription = null;
+          },
+        );
   }
 
   // Check initial tracking status and start stream if needed
@@ -150,7 +156,7 @@ void onStart(ServiceInstance service) async {
     prefs.setBool('isTracking', true);
     startLocationStream(); // Start the stream
     debugPrint("📍 BG_SERVICE: Start location tracking command received.");
-    
+
     // If we have order data in the event, we can use it here
     if (event != null && event['orderId'] != null) {
       debugPrint("📦 BG_SERVICE: Tracking for order: ${event['orderId']}");
@@ -179,21 +185,19 @@ void onStart(ServiceInstance service) async {
 // This function correctly invokes the UI to show a dialog.
 void _handleDeliveryRequest(dynamic data, ServiceInstance service) {
   debugPrint(
-      "📦 BG_SERVICE: Delivery request received: ${data['restaurantName'] ?? 'Unknown'}");
+    "📦 BG_SERVICE: Delivery request received: ${data['restaurantName'] ?? 'Unknown'}",
+  );
 
   // This sends a message to the UI thread.
   // We use a key ('showDialog') to identify the event and pass the data.
-  service.invoke(
-    'showDialog',
-    {
-      "title": "New Delivery Request!",
-      "body": "From ${data['restaurantName'] ?? 'Unknown Restaurant'}",
-      "orderId": data['orderId'] ?? 'unknown_order',
-      "restaurantId": data['restaurantId'] ?? 'unknown_restaurant',
-      "restaurantName": data['restaurantName'] ?? 'Unknown Restaurant',
-      "restaurantAddress": data['restaurantAddress'] ?? 'Unknown Address',
-      "customerAddress": data['customerAddress'] ?? 'Unknown Address',
-      "timestamp": DateTime.now().toIso8601String(),
-    },
-  );
+  service.invoke('showDialog', {
+    "title": "New Delivery Request!",
+    "body": "From ${data['restaurantName'] ?? 'Unknown Restaurant'}",
+    "orderId": data['orderId'] ?? 'unknown_order',
+    "restaurantId": data['restaurantId'] ?? 'unknown_restaurant',
+    "restaurantName": data['restaurantName'] ?? 'Unknown Restaurant',
+    "restaurantAddress": data['restaurantAddress'] ?? 'Unknown Address',
+    "customerAddress": data['customerAddress'] ?? 'Unknown Address',
+    "timestamp": DateTime.now().toIso8601String(),
+  });
 }

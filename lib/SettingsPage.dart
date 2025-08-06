@@ -3,9 +3,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// Import the location permission service
+// Import the services
 import 'services/location_permission_service.dart';
 import 'services/background_service.dart';
+import 'services/tracking_status_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -19,12 +20,49 @@ class _SettingsPageState extends State<SettingsPage> {
   bool serviceRunning = false;
   bool _isCheckingPermission = false;
   final FlutterBackgroundService _service = FlutterBackgroundService();
+  final TrackingStatusService _trackingStatusService = TrackingStatusService();
 
   @override
   void initState() {
     super.initState();
     _initialize();
     _setupServiceListener();
+    
+    // Listen to tracking status changes
+    _trackingStatusService.trackingStatusStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          isTracking = status;
+          debugPrint('SettingsPage: isTracking updated from stream to $isTracking');
+        });
+      }
+    });
+    
+    // Listen to service running status changes
+    _trackingStatusService.serviceRunningStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          serviceRunning = status;
+          debugPrint('SettingsPage: serviceRunning updated from stream to $serviceRunning');
+        });
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh status when page becomes visible
+    _loadTrackingStatus();
+    _checkServiceStatus();
+  }
+
+  @override
+  void didUpdateWidget(SettingsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refresh status when widget updates
+    _loadTrackingStatus();
+    _checkServiceStatus();
   }
 
   void _setupServiceListener() {
@@ -53,13 +91,24 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _loadTrackingStatus() async {
+    if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
-    setState(() => isTracking = prefs.getBool('isTracking') ?? false);
+    final status = prefs.getBool('isTracking') ?? false;
+    setState(() {
+      isTracking = status;
+      debugPrint('SettingsPage: isTracking updated to $isTracking');
+    });
   }
 
   Future<void> _checkServiceStatus() async {
+    if (!mounted) return;
     final isRunning = await _service.isRunning();
-    setState(() => serviceRunning = isRunning);
+    setState(() {
+      serviceRunning = isRunning;
+      debugPrint('SettingsPage: serviceRunning updated to $serviceRunning');
+    });
+    // Update the service running status in the tracking status service
+    _trackingStatusService.updateServiceRunningStatus(isRunning);
   }
 
   Future<void> _toggleTracking(bool? value) async {
@@ -89,6 +138,9 @@ class _SettingsPageState extends State<SettingsPage> {
         // If permission is granted, proceed to start the service and tracking
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', true);
+        
+        // Update tracking status service
+        await _trackingStatusService.updateTrackingStatus(true);
 
         if (!serviceRunning) {
           debugPrint("Starting background service...");
@@ -96,6 +148,8 @@ class _SettingsPageState extends State<SettingsPage> {
           // Wait a moment for the service to fully start
           await Future.delayed(const Duration(milliseconds: 500));
           setState(() => serviceRunning = true);
+          // Update the service running status in the tracking status service
+          _trackingStatusService.updateServiceRunningStatus(true);
         }
 
         debugPrint("Invoking startLocationTracking...");
@@ -105,6 +159,9 @@ class _SettingsPageState extends State<SettingsPage> {
         // If turning OFF, no permission needed. Just stop.
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', false);
+        
+        // Update tracking status service
+        await _trackingStatusService.updateTrackingStatus(false);
         _service.invoke("stopLocationTracking");
         debugPrint("UI: Invoked stopLocationTracking");
         setState(() => isTracking = false);
@@ -142,6 +199,10 @@ class _SettingsPageState extends State<SettingsPage> {
       serviceRunning = false;
       isTracking = false;
     });
+    
+    // Update the tracking status service
+    await _trackingStatusService.updateTrackingStatus(false);
+    _trackingStatusService.updateServiceRunningStatus(false);
   }
 
   Future<void> _openGoogleMapDirections({
@@ -166,17 +227,17 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      // appBar: AppBar(
-      //   title: const Text("Foodyah Settings"),
-      //   automaticallyImplyLeading: false, // Hides the back button
-      //   actions: [
-      //     IconButton(
-      //       icon: const Icon(Icons.stop_circle_outlined),
-      //       onPressed: _stopService,
-      //       tooltip: 'Stop Background Service',
-      //     ),
-      //   ],
-      // ),
+      appBar: AppBar(
+        title: const Text("Foodyah Settings"),
+        automaticallyImplyLeading: false, // Hides the back button
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.stop_circle_outlined),
+            onPressed: _stopService,
+            tooltip: 'Stop Background Service',
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

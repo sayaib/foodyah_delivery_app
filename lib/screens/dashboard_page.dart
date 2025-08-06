@@ -8,6 +8,7 @@ import 'PayoutPage.dart';
 import 'ProfilePage.dart';
 import '../SettingsPage.dart';
 import '../services/location_permission_service.dart';
+import '../services/tracking_status_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -26,6 +27,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final _storage = const FlutterSecureStorage();
   Map<String, dynamic> _orderData = {};
   bool _showNewOrderPopup = false;
+  final TrackingStatusService _trackingStatusService = TrackingStatusService();
 
   final List<Widget> _pages = const [
     OrderInProgressPage(),
@@ -42,12 +44,51 @@ class _DashboardPageState extends State<DashboardPage> {
     _initialize();
     listenToBackgroundService();
     _loadDriverId();
+    
+    // Listen to tracking status changes
+    _trackingStatusService.trackingStatusStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          isTracking = status;
+          debugPrint('Dashboard: isTracking updated from stream to $isTracking');
+        });
+      }
+    });
+    
+    // Listen to service running status changes
+    _trackingStatusService.serviceRunningStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          serviceRunning = status;
+          debugPrint('Dashboard: serviceRunning updated from stream to $serviceRunning');
+        });
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh status when dashboard becomes visible
+    _loadTrackingStatus();
+    _checkServiceStatus();
+  }
+
+  @override
+  void didUpdateWidget(DashboardPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refresh status when widget updates
+    _loadTrackingStatus();
+    _checkServiceStatus();
   }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+    // Refresh tracking status when switching tabs
+    _loadTrackingStatus();
+    _checkServiceStatus();
   }
 
   Future<void> _initialize() async {
@@ -56,13 +97,26 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _loadTrackingStatus() async {
+    if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
-    setState(() => isTracking = prefs.getBool('isTracking') ?? false);
+    final status = prefs.getBool('isTracking') ?? false;
+    setState(() {
+      isTracking = status;
+      debugPrint('Dashboard: isTracking updated to $isTracking');
+    });
+    // Also update the tracking status service
+    await _trackingStatusService.updateTrackingStatus(status);
   }
 
   Future<void> _checkServiceStatus() async {
+    if (!mounted) return;
     final isRunning = await _service.isRunning();
-    setState(() => serviceRunning = isRunning);
+    setState(() {
+      serviceRunning = isRunning;
+      debugPrint('Dashboard: serviceRunning updated to $serviceRunning');
+    });
+    // Also update the service running status in the tracking status service
+    _trackingStatusService.updateServiceRunningStatus(isRunning);
   }
 
   Future<void> _loadDriverId() async {
@@ -112,6 +166,9 @@ class _DashboardPageState extends State<DashboardPage> {
         // If permission is granted, proceed to start the service and tracking
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', true);
+        
+        // Update tracking status service
+        await _trackingStatusService.updateTrackingStatus(true);
 
         // Save driver ID to shared preferences for background service
         await prefs.setString('driverId', _driverId);
@@ -131,6 +188,9 @@ class _DashboardPageState extends State<DashboardPage> {
         // If turning OFF, stop both location tracking and background service
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', false);
+        
+        // Update tracking status service
+        await _trackingStatusService.updateTrackingStatus(false);
 
         // First stop location tracking
         _service.invoke("stopLocationTracking");
@@ -247,7 +307,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     errorBuilder: (context, error, stackTrace) => const Icon(
                       Icons.delivery_dining,
                       color: Colors.white,
-                      size: 32,
+                      size: 30,
                     ),
                   ),
                 ),
@@ -268,15 +328,25 @@ class _DashboardPageState extends State<DashboardPage> {
             actions: [
               // Location tracking toggle switch with improved design
               Container(
-                margin: const EdgeInsets.only(right: 16, bottom: 2),
+                margin: const EdgeInsets.only(right: 16, bottom: 10),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
                   color: isTracking
-                      ? Colors.green.withOpacity(0.2)
-                      : Colors.grey.withOpacity(0.2),
+                      ? const Color.fromARGB(
+                          255,
+                          110,
+                          245,
+                          115,
+                        ).withOpacity(0.2)
+                      : const Color.fromARGB(
+                          255,
+                          213,
+                          213,
+                          213,
+                        ).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isTracking ? Colors.green : Colors.grey,
