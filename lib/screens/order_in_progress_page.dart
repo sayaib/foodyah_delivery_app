@@ -243,41 +243,17 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
       children: [
         Scaffold(
           backgroundColor: Colors.grey[50],
-          appBar: AppBar(
-            backgroundColor: Colors.deepOrange,
-            elevation: 4,
-            shadowColor: Colors.deepOrange.withValues(alpha: 0.4),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-            ),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.delivery_dining, size: 24),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Order In Progress',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.stop_circle_outlined),
-                onPressed: _stopService,
-                tooltip: 'Stop Background Service',
-              ),
-            ],
-          ),
+          // appBar: AppBar(
+          //   title: const Text("Order In Progress"),
+          //   automaticallyImplyLeading: false, // Hides the back button
+          //   actions: [
+          //     IconButton(
+          //       icon: const Icon(Icons.stop_circle_outlined),
+          //       onPressed: _stopService,
+          //       tooltip: 'Stop Background Service',
+          //     ),
+          //   ],
+          // ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -286,7 +262,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                 // Status Card with improved design
                 Card(
                   elevation: 4,
-                  shadowColor: Colors.deepOrange.withValues(alpha: 0.2),
+                  shadowColor: Colors.deepOrange.withOpacity(0.2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -299,8 +275,8 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                         colors: [
                           Colors.white,
                           isTracking
-                              ? Colors.green.withValues(alpha: 0.05)
-                              : Colors.grey.withValues(alpha: 0.05),
+                              ? Colors.green.withOpacity(0.05)
+                              : Colors.grey.withOpacity(0.05),
                         ],
                       ),
                     ),
@@ -315,8 +291,8 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: isTracking
-                                      ? Colors.green.withValues(alpha: 0.1)
-                                      : Colors.grey.withValues(alpha: 0.1),
+                                      ? Colors.green.withOpacity(0.1)
+                                      : Colors.grey.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
@@ -347,13 +323,13 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                             ),
                             decoration: BoxDecoration(
                               color: isTracking
-                                  ? Colors.green.withValues(alpha: 0.1)
-                                  : Colors.grey.withValues(alpha: 0.1),
+                                  ? Colors.green.withOpacity(0.1)
+                                  : Colors.grey.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isTracking
-                                    ? Colors.green.withValues(alpha: 0.3)
-                                    : Colors.grey.withValues(alpha: 0.3),
+                                    ? Colors.green.withOpacity(0.3)
+                                    : Colors.grey.withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
@@ -369,16 +345,19 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                   size: 20,
                                 ),
                                 const SizedBox(width: 10),
-                                Text(
-                                  isTracking
-                                      ? 'You are currently ONLINE'
-                                      : 'You are currently OFFLINE',
-                                  style: TextStyle(
-                                    color: isTracking
-                                        ? Colors.green
-                                        : Colors.grey,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                Flexible(
+                                  child: Text(
+                                    isTracking
+                                        ? 'You are currently ONLINE'
+                                        : 'You are currently OFFLINE',
+                                    style: TextStyle(
+                                      color: isTracking
+                                          ? Colors.green
+                                          : Colors.grey,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -392,13 +371,13 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                             ),
                             decoration: BoxDecoration(
                               color: serviceRunning
-                                  ? Colors.green.withValues(alpha: 0.1)
-                                  : Colors.red.withValues(alpha: 0.1),
+                                  ? Colors.green.withOpacity(0.1)
+                                  : Colors.red.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: serviceRunning
-                                    ? Colors.green.withValues(alpha: 0.3)
-                                    : Colors.red.withValues(alpha: 0.3),
+                                    ? Colors.green.withOpacity(0.3)
+                                    : Colors.red.withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
@@ -414,15 +393,18 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                   size: 20,
                                 ),
                                 const SizedBox(width: 10),
-                                Text(
-                                  serviceRunning
-                                      ? 'Background service is RUNNING'
-                                      : 'Background service is STOPPED',
-                                  style: TextStyle(
-                                    color: serviceRunning
-                                        ? Colors.green
-                                        : Colors.red,
-                                    fontWeight: FontWeight.bold,
+                                Flexible(
+                                  child: Text(
+                                    serviceRunning
+                                        ? 'Background service is RUNNING'
+                                        : 'Background service is STOPPED',
+                                    style: TextStyle(
+                                      color: serviceRunning
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -441,12 +423,12 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                       horizontal: 16.0,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
+                      color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                      children: const [
                         SizedBox(
                           width: 20,
                           height: 20,
@@ -456,11 +438,14 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                           ),
                         ),
                         SizedBox(width: 12),
-                        Text(
-                          "Checking permissions...",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                        Flexible(
+                          child: Text(
+                            "Checking permissions...",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -476,7 +461,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange.withValues(alpha: 0.1),
+                            color: Colors.deepOrange.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -537,7 +522,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         // New Order Popup Overlay
         if (_showNewOrderPopup)
           Container(
-            color: Colors.black.withValues(alpha: 0.7),
+            color: Colors.black.withOpacity(0.7),
             child: Center(
               child: Container(
                 width: MediaQuery.of(context).size.width * 0.9,
@@ -547,7 +532,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Colors.black.withOpacity(0.2),
                       blurRadius: 15,
                       spreadRadius: 5,
                     ),
@@ -555,10 +540,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white,
-                      Colors.orange.withValues(alpha: 0.1),
-                    ],
+                    colors: [Colors.white, Colors.orange.withOpacity(0.1)],
                   ),
                 ),
                 child: Padding(
@@ -570,7 +552,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.deepOrange.withValues(alpha: 0.1),
+                          color: Colors.deepOrange.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -587,22 +569,26 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                           Container(
                             height: 2,
                             width: 40,
-                            color: Colors.deepOrange.withValues(alpha: 0.5),
+                            color: Colors.deepOrange.withOpacity(0.5),
                           ),
                           const SizedBox(width: 10),
-                          Text(
-                            _orderData['title'] ?? "New Delivery Request",
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepOrange,
+                          Flexible(
+                            child: Text(
+                              _orderData['title'] ?? "New Delivery Request",
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.deepOrange,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
                             ),
                           ),
                           const SizedBox(width: 10),
                           Container(
                             height: 2,
                             width: 40,
-                            color: Colors.deepOrange.withValues(alpha: 0.5),
+                            color: Colors.deepOrange.withOpacity(0.5),
                           ),
                         ],
                       ),
@@ -614,7 +600,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withValues(alpha: 0.1),
+                              color: Colors.grey.withOpacity(0.1),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -628,6 +614,8 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                             color: Colors.grey[800],
                           ),
                           textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 3,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -649,7 +637,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                 borderRadius: BorderRadius.circular(30),
                               ),
                               elevation: 3,
-                              shadowColor: Colors.red.withValues(alpha: 0.3),
+                              shadowColor: Colors.red.withOpacity(0.3),
                             ),
                           ),
                           ElevatedButton.icon(
@@ -667,7 +655,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                 borderRadius: BorderRadius.circular(30),
                               ),
                               elevation: 3,
-                              shadowColor: Colors.green.withValues(alpha: 0.3),
+                              shadowColor: Colors.green.withOpacity(0.3),
                             ),
                           ),
                         ],

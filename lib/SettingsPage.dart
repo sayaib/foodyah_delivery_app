@@ -166,44 +166,24 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.deepOrange,
-        elevation: 4,
-        shadowColor: Colors.deepOrange.withOpacity(0.4),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.settings, size: 24),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Foodyah Settings',
-              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.stop_circle_outlined),
-            onPressed: _stopService,
-            tooltip: 'Stop Background Service',
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   title: const Text("Foodyah Settings"),
+      //   automaticallyImplyLeading: false, // Hides the back button
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.stop_circle_outlined),
+      //       onPressed: _stopService,
+      //       tooltip: 'Stop Background Service',
+      //     ),
+      //   ],
+      // ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 16),
               // Note about location tracking moved to dashboard
               Container(
                 padding: const EdgeInsets.all(16),

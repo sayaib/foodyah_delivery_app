@@ -232,7 +232,7 @@ class _DashboardPageState extends State<DashboardPage> {
           appBar: AppBar(
             backgroundColor: Colors.deepOrange,
             elevation: 4,
-            shadowColor: Colors.deepOrange.withValues(alpha: 0.5),
+            shadowColor: Colors.deepOrange.withOpacity(0.5),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
             ),
@@ -252,12 +252,15 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Foodyah Delivery',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    letterSpacing: 0.5,
+                Flexible(
+                  child: Text(
+                    'Foodyah Delivery',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      letterSpacing: 0.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -265,15 +268,15 @@ class _DashboardPageState extends State<DashboardPage> {
             actions: [
               // Location tracking toggle switch with improved design
               Container(
-                margin: const EdgeInsets.only(right: 16),
+                margin: const EdgeInsets.only(right: 16, bottom: 2),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: 10,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
                   color: isTracking
-                      ? Colors.green.withValues(alpha: 0.2)
-                      : Colors.grey.withValues(alpha: 0.2),
+                      ? Colors.green.withOpacity(0.2)
+                      : Colors.grey.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isTracking ? Colors.green : Colors.grey,
@@ -281,12 +284,16 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      isTracking ? 'Online' : 'Offline',
-                      style: TextStyle(
-                        color: isTracking ? Colors.green : Colors.grey,
-                        fontWeight: FontWeight.bold,
+                    Flexible(
+                      child: Text(
+                        isTracking ? 'Online' : 'Offline',
+                        style: TextStyle(
+                          color: isTracking ? Colors.green : Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -296,9 +303,9 @@ class _DashboardPageState extends State<DashboardPage> {
                           ? null
                           : (value) => _toggleTracking(value),
                       activeColor: Colors.green,
-                      activeTrackColor: Colors.green.withValues(alpha: 0.5),
+                      activeTrackColor: Colors.green.withOpacity(0.5),
                       inactiveThumbColor: Colors.grey,
-                      inactiveTrackColor: Colors.grey.withValues(alpha: 0.5),
+                      inactiveTrackColor: Colors.grey.withOpacity(0.5),
                     ),
                   ],
                 ),
@@ -322,7 +329,7 @@ class _DashboardPageState extends State<DashboardPage> {
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
+                  color: Colors.black.withOpacity(0.2),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -357,7 +364,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: _selectedIndex == 0
-                            ? Colors.deepOrange.withValues(alpha: 0.1)
+                            ? Colors.deepOrange.withOpacity(0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -370,7 +377,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: _selectedIndex == 1
-                            ? Colors.deepOrange.withValues(alpha: 0.1)
+                            ? Colors.deepOrange.withOpacity(0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -383,7 +390,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: _selectedIndex == 2
-                            ? Colors.deepOrange.withValues(alpha: 0.1)
+                            ? Colors.deepOrange.withOpacity(0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -396,7 +403,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: _selectedIndex == 3
-                            ? Colors.deepOrange.withValues(alpha: 0.1)
+                            ? Colors.deepOrange.withOpacity(0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -413,7 +420,7 @@ class _DashboardPageState extends State<DashboardPage> {
         // New Order Popup Overlay with improved design
         if (_showNewOrderPopup)
           Container(
-            color: Colors.black54,
+            color: Colors.black.withOpacity(0.54),
             child: Center(
               child: Card(
                 margin: const EdgeInsets.all(16),
@@ -439,7 +446,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange.withValues(alpha: 0.1),
+                            color: Colors.deepOrange.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -456,10 +463,10 @@ class _DashboardPageState extends State<DashboardPage> {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange.withValues(alpha: 0.1),
+                            color: Colors.deepOrange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.deepOrange.withValues(alpha: 0.3),
+                              color: Colors.deepOrange.withOpacity(0.3),
                               width: 1,
                             ),
                           ),
@@ -483,7 +490,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.withValues(alpha: 0.1),
+                                color: Colors.grey.withOpacity(0.1),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
