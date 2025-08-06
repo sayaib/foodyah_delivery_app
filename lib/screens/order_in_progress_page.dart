@@ -33,7 +33,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     _initialize();
     _setupServiceListener();
     _loadDriverId();
-    
+
     // Force refresh tracking status when page initializes
     _forceRefreshTrackingStatus();
 
@@ -61,29 +61,33 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
       }
     });
   }
-  
+
   Future<void> _forceRefreshTrackingStatus() async {
     // This ensures the UI shows the correct tracking status when the app is reopened
     final prefs = await SharedPreferences.getInstance();
     final status = prefs.getBool('isTracking') ?? false;
-    
+
     // Update both local state and service
     if (mounted) {
       setState(() {
         isTracking = status;
-        debugPrint('OrderInProgressPage: Force refreshed tracking status to $isTracking');
+        debugPrint(
+          'OrderInProgressPage: Force refreshed tracking status to $isTracking',
+        );
       });
     }
-    
+
     // Also check if service is actually running
     final isRunning = await _service.isRunning();
     if (mounted) {
       setState(() {
         serviceRunning = isRunning;
-        debugPrint('OrderInProgressPage: Force refreshed service status to $serviceRunning');
+        debugPrint(
+          'OrderInProgressPage: Force refreshed service status to $serviceRunning',
+        );
       });
     }
-    
+
     // Update tracking status service
     await _trackingStatusService.updateTrackingStatus(status);
     _trackingStatusService.updateServiceRunningStatus(isRunning);
@@ -116,14 +120,8 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
   }
 
   void _setupServiceListener() {
-    _service.on('showDialog').listen((event) {
-      if (event != null && mounted) {
-        setState(() {
-          _showNewOrderPopup = true;
-          _orderData = event;
-        });
-      }
-    });
+    // Removed showDialog listener to prevent duplicate popups
+    // The delivery request popups are already handled in dashboard_page.dart
   }
 
   Future<void> _initialize() async {

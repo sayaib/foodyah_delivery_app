@@ -70,23 +70,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _setupServiceListener() {
-    _service.on('showDialog').listen((event) {
-      if (event != null && mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(event['title'] ?? 'Notification'),
-            content: Text(event['body'] ?? 'You have a new message.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
-    });
+    // Removed showDialog listener to prevent duplicate popups
+    // The delivery request popups are already handled in dashboard_page.dart
   }
 
   Future<void> _initialize() async {
