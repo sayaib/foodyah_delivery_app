@@ -44,36 +44,40 @@ class _DashboardPageState extends State<DashboardPage> {
     _initialize();
     listenToBackgroundService();
     _loadDriverId();
-    
+
     // Ensure tracking status is properly initialized
     _forceRefreshTrackingStatus();
-    
+
     // Listen to tracking status changes
     _trackingStatusService.trackingStatusStream.listen((status) {
       if (mounted) {
         setState(() {
           isTracking = status;
-          debugPrint('Dashboard: isTracking updated from stream to $isTracking');
+          debugPrint(
+            'Dashboard: isTracking updated from stream to $isTracking',
+          );
         });
       }
     });
-    
+
     // Listen to service running status changes
     _trackingStatusService.serviceRunningStream.listen((status) {
       if (mounted) {
         setState(() {
           serviceRunning = status;
-          debugPrint('Dashboard: serviceRunning updated from stream to $serviceRunning');
+          debugPrint(
+            'Dashboard: serviceRunning updated from stream to $serviceRunning',
+          );
         });
       }
     });
   }
-  
+
   Future<void> _forceRefreshTrackingStatus() async {
     // This ensures the UI shows the correct tracking status when the app is reopened
     final prefs = await SharedPreferences.getInstance();
     final status = prefs.getBool('isTracking') ?? false;
-    
+
     // Update both local state and service
     if (mounted) {
       setState(() {
@@ -81,16 +85,18 @@ class _DashboardPageState extends State<DashboardPage> {
         debugPrint('Dashboard: Force refreshed tracking status to $isTracking');
       });
     }
-    
+
     // Also check if service is actually running
     final isRunning = await _service.isRunning();
     if (mounted) {
       setState(() {
         serviceRunning = isRunning;
-        debugPrint('Dashboard: Force refreshed service status to $serviceRunning');
+        debugPrint(
+          'Dashboard: Force refreshed service status to $serviceRunning',
+        );
       });
     }
-    
+
     // Update tracking status service
     await _trackingStatusService.updateTrackingStatus(status);
     _trackingStatusService.updateServiceRunningStatus(isRunning);
@@ -120,7 +126,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _loadTrackingStatus();
     _checkServiceStatus();
     debugPrint('Dashboard: Tab switched to $index, refreshing status');
-    
+
     // Force refresh the status after a short delay to ensure UI is updated
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
@@ -147,18 +153,20 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // Add a timestamp to track when we last checked the service status
-  DateTime _lastServiceCheck = DateTime.now().subtract(const Duration(seconds: 1));
-  
+  DateTime _lastServiceCheck = DateTime.now().subtract(
+    const Duration(seconds: 1),
+  );
+
   Future<void> _checkServiceStatus() async {
     if (!mounted) return;
-    
+
     // Debounce the service status check to prevent too many calls
     final now = DateTime.now();
     if (now.difference(_lastServiceCheck).inMilliseconds < 300) {
       return; // Skip if we checked too recently
     }
     _lastServiceCheck = now;
-    
+
     final isRunning = await _service.isRunning();
     if (mounted && serviceRunning != isRunning) {
       setState(() {
@@ -217,7 +225,7 @@ class _DashboardPageState extends State<DashboardPage> {
         // If permission is granted, proceed to start the service and tracking
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', true);
-        
+
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(true);
 
@@ -239,7 +247,7 @@ class _DashboardPageState extends State<DashboardPage> {
         // If turning OFF, stop both location tracking and background service
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isTracking', false);
-        
+
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(false);
 
@@ -341,9 +349,14 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Scaffold(
           appBar: AppBar(
-            backgroundColor: Colors.deepOrange,
+            backgroundColor: const Color.fromARGB(255, 177, 47, 7),
             elevation: 4,
-            shadowColor: Colors.deepOrange.withOpacity(0.5),
+            shadowColor: const Color.fromARGB(
+              255,
+              204,
+              56,
+              11,
+            ).withOpacity(0.5),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
             ),
@@ -370,6 +383,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       fontWeight: FontWeight.bold,
                       fontSize: 20,
                       letterSpacing: 0.5,
+                      color: Colors.white,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -400,7 +414,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         ).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isTracking ? Colors.green : Colors.grey,
+                    color: isTracking
+                        ? Colors.green
+                        : const Color.fromARGB(255, 230, 230, 230),
                     width: 1,
                   ),
                 ),
@@ -411,7 +427,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Text(
                         isTracking ? 'Online' : 'Offline',
                         style: TextStyle(
-                          color: isTracking ? Colors.green : Colors.grey,
+                          color: isTracking
+                              ? Colors.green
+                              : const Color.fromARGB(255, 235, 235, 235),
                           fontWeight: FontWeight.bold,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -425,8 +443,18 @@ class _DashboardPageState extends State<DashboardPage> {
                           : (value) => _toggleTracking(value),
                       activeColor: Colors.green,
                       activeTrackColor: Colors.green.withOpacity(0.5),
-                      inactiveThumbColor: Colors.grey,
-                      inactiveTrackColor: Colors.grey.withOpacity(0.5),
+                      inactiveThumbColor: const Color.fromARGB(
+                        255,
+                        232,
+                        232,
+                        232,
+                      ),
+                      inactiveTrackColor: const Color.fromARGB(
+                        255,
+                        226,
+                        225,
+                        225,
+                      ).withOpacity(0.5),
                     ),
                   ],
                 ),
