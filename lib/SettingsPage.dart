@@ -296,22 +296,37 @@ class _SettingsPageState extends State<SettingsPage> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.deepOrange.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.deepOrange.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.deepOrange.withOpacity(0.2),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.deepOrange.withOpacity(0.2),
+                                    Colors.deepOrange.withOpacity(0.05),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
                               ),
                               child: Icon(
                                 Icons.info_outline,
                                 color: Colors.deepOrange,
-                                size: 24,
+                                size: 26,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 16),
                             const Text(
                               'App Information',
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -319,17 +334,26 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         const SizedBox(height: 20),
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                                color: Colors.grey.withOpacity(0.15),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                                offset: const Offset(0, 3),
                               ),
                             ],
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white,
+                                Colors.grey.withOpacity(0.05),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
                           ),
                           child: Column(
                             children: [
@@ -346,18 +370,30 @@ class _SettingsPageState extends State<SettingsPage> {
                                   ),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
+                                      horizontal: 14,
+                                      vertical: 8,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.deepOrange.withOpacity(0.1),
+                                      color: Colors.deepOrange.withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.deepOrange.withOpacity(0.1),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                      border: Border.all(
+                                        color: Colors.deepOrange.withOpacity(0.3),
+                                        width: 1,
+                                      ),
                                     ),
                                     child: const Text(
                                       '1.1.0',
                                       style: TextStyle(
                                         color: Colors.deepOrange,
                                         fontWeight: FontWeight.bold,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ),
@@ -375,11 +411,18 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                                 trailing: Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.withOpacity(0.1),
+                                    color: Colors.deepOrange.withOpacity(0.1),
                                     shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.deepOrange.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
                                   child: const Padding(
-                                    padding: EdgeInsets.all(8.0),
+                                    padding: EdgeInsets.all(10.0),
                                     child: Icon(
                                       Icons.arrow_forward_ios,
                                       size: 16,

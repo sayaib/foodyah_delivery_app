@@ -508,12 +508,27 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: isTracking
-                                      ? Colors.green.withOpacity(0.1)
-                                      : Colors.grey.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
+                                      ? Colors.green.withOpacity(0.15)
+                                      : Colors.grey.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: (isTracking ? Colors.green : Colors.grey).withOpacity(0.2),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      (isTracking ? Colors.green : Colors.grey).withOpacity(0.2),
+                                      (isTracking ? Colors.green : Colors.grey).withOpacity(0.05),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
                                 ),
                                 child: Icon(
                                   isTracking
@@ -522,49 +537,91 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                   color: isTracking
                                       ? Colors.green
                                       : Colors.grey,
-                                  size: 24,
+                                  size: 28,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Delivery Status',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              const SizedBox(width: 16),
+                              Row(
+                                children: [
+                                  const Text(
+                                    'Delivery Status',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: isTracking ? Colors.green : Colors.grey,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: (isTracking ? Colors.green : Colors.grey).withOpacity(0.3),
+                                          blurRadius: 4,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
+                              horizontal: 18,
+                              vertical: 12,
                             ),
                             decoration: BoxDecoration(
                               color: isTracking
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
+                                  ? Colors.green.withOpacity(0.15)
+                                  : Colors.grey.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isTracking
                                     ? Colors.green.withOpacity(0.3)
                                     : Colors.grey.withOpacity(0.3),
-                                width: 1,
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (isTracking ? Colors.green : Colors.grey).withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                              gradient: LinearGradient(
+                                colors: [
+                                  (isTracking ? Colors.green : Colors.grey).withOpacity(0.2),
+                                  (isTracking ? Colors.green : Colors.grey).withOpacity(0.05),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
                             ),
                             child: Row(
                               children: [
-                                Icon(
-                                  isTracking
-                                      ? Icons.check_circle
-                                      : Icons.offline_bolt,
-                                  color: isTracking
-                                      ? Colors.green
-                                      : Colors.grey,
-                                  size: 20,
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: (isTracking ? Colors.green : Colors.grey).withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isTracking
+                                        ? Icons.check_circle
+                                        : Icons.offline_bolt,
+                                    color: isTracking
+                                        ? Colors.green
+                                        : Colors.grey,
+                                    size: 22,
+                                  ),
                                 ),
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 12),
                                 Flexible(
                                   child: Text(
                                     isTracking
@@ -572,8 +629,8 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                         : 'You are currently OFFLINE',
                                     style: TextStyle(
                                       color: isTracking
-                                          ? Colors.green
-                                          : Colors.grey,
+                                          ? Colors.green.shade800
+                                          : Colors.grey.shade700,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
                                     ),
@@ -766,20 +823,27 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                     }
                                   },
                                   child: Card(
-                                    elevation: 4,
+                                    elevation: 6,
                                     margin: const EdgeInsets.only(bottom: 16),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(16),
                                       side: BorderSide(color: Colors.deepOrange.withOpacity(0.3), width: 1),
                                     ),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                         gradient: LinearGradient(
-                                          colors: [Colors.white, Colors.orange.withOpacity(0.05)],
+                                          colors: [Colors.white, Colors.orange.withOpacity(0.15)],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.05),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ],
                                       ),
                                       child: Padding(
                                         padding: const EdgeInsets.all(16.0),
@@ -803,10 +867,17 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                                 ),
                                                 const Spacer(),
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.deepOrange.withOpacity(0.1),
+                                                    color: Colors.deepOrange.withOpacity(0.15),
                                                     borderRadius: BorderRadius.circular(12),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.deepOrange.withOpacity(0.1),
+                                                        blurRadius: 4,
+                                                        offset: const Offset(0, 2),
+                                                      ),
+                                                    ],
                                                   ),
                                                   child: Row(
                                                     children: const [
@@ -873,20 +944,27 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                     }
                                   },
                                   child: Card(
-                                    elevation: 4,
+                                    elevation: 6,
                                     margin: const EdgeInsets.only(bottom: 16),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(16),
                                       side: BorderSide(color: Colors.deepOrange.withOpacity(0.3), width: 1),
                                     ),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                         gradient: LinearGradient(
-                                          colors: [Colors.white, Colors.orange.withOpacity(0.05)],
+                                          colors: [Colors.white, Colors.orange.withOpacity(0.15)],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.05),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ],
                                       ),
                                       child: Padding(
                                         padding: const EdgeInsets.all(16.0),
@@ -910,10 +988,17 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                                 ),
                                                 const Spacer(),
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.deepOrange.withOpacity(0.1),
+                                                    color: Colors.deepOrange.withOpacity(0.15),
                                                     borderRadius: BorderRadius.circular(12),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.deepOrange.withOpacity(0.1),
+                                                        blurRadius: 4,
+                                                        offset: const Offset(0, 2),
+                                                      ),
+                                                    ],
                                                   ),
                                                   child: Row(
                                                     children: const [
@@ -956,36 +1041,77 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(24),
+                                padding: const EdgeInsets.all(28),
                                 decoration: BoxDecoration(
-                                  color: Colors.deepOrange.withOpacity(0.1),
+                                  color: Colors.deepOrange.withOpacity(0.15),
                                   shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.deepOrange.withOpacity(0.2),
+                                      blurRadius: 15,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.deepOrange.withOpacity(0.2),
+                                      Colors.deepOrange.withOpacity(0.05),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
                                 ),
                                 child: const Icon(
                                   Icons.delivery_dining,
-                                  size: 64,
+                                  size: 72,
                                   color: Colors.deepOrange,
                                 ),
                               ),
-                              const SizedBox(height: 24),
-                              const Text(
-                                "Waiting for new delivery requests...",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.deepOrange,
+                              const SizedBox(height: 28),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.deepOrange.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.deepOrange.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: const Text(
+                                  "Waiting for new delivery requests...",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.deepOrange,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                isTracking
-                                    ? "You're online and ready to receive orders"
-                                    : "Go online to start receiving delivery requests",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isTracking ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: isTracking ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.3),
+                                    width: 1,
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
+                                child: Text(
+                                  isTracking
+                                      ? "You're online and ready to receive orders"
+                                      : "Go online to start receiving delivery requests",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: isTracking ? Colors.green.shade800 : Colors.grey[700],
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
                             ],
                           ),
