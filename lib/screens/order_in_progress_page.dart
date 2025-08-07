@@ -719,63 +719,232 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                               const SizedBox(height: 16),
                               if (_orderData.containsKey('userFullAddress') &&
                                   _orderData['userFullAddress'] != null)
-                                Card(
-                                  elevation: 3,
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          "Customer Address",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                GestureDetector(
+                                  onTap: () {
+                                    // Get customer coordinates if available
+                                    double? lat;
+                                    double? lng;
+                                    
+                                    // Check if userLocation coordinates exist (primary key for customer location)
+                                    if (_orderData.containsKey('userLocation') && 
+                                        _orderData['userLocation'] != null &&
+                                        _orderData['userLocation']['coordinates'] != null &&
+                                        _orderData['userLocation']['coordinates'].length >= 2) {
+                                      // Format: {type: Point, coordinates: [longitude, latitude]}
+                                      lng = _orderData['userLocation']['coordinates'][0];
+                                      lat = _orderData['userLocation']['coordinates'][1];
+                                    }
+                                    // If no userLocation coordinates, check customerLocation coordinates
+                                    else if (_orderData.containsKey('customerLocation') && 
+                                        _orderData['customerLocation'] != null &&
+                                        _orderData['customerLocation']['coordinates'] != null &&
+                                        _orderData['customerLocation']['coordinates'].length >= 2) {
+                                      // Format: {type: Point, coordinates: [longitude, latitude]}
+                                      lng = _orderData['customerLocation']['coordinates'][0];
+                                      lat = _orderData['customerLocation']['coordinates'][1];
+                                    }
+                                    // If no customer coordinates, check delivery coordinates
+                                    else if (_orderData.containsKey('deliveryLocation') && 
+                                        _orderData['deliveryLocation'] != null &&
+                                        _orderData['deliveryLocation']['coordinates'] != null &&
+                                        _orderData['deliveryLocation']['coordinates'].length >= 2) {
+                                      lng = _orderData['deliveryLocation']['coordinates'][0];
+                                      lat = _orderData['deliveryLocation']['coordinates'][1];
+                                    }
+
+                                    if (lat != null && lng != null) {
+                                      _openGoogleMapDirections(lat: lat, lng: lng);
+                                    } else {
+                                      // Fallback to default coordinates or show error
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'No location coordinates available for this address',
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          _orderData['userFullAddress'] ??
-                                              'No address provided',
-                                          style: const TextStyle(fontSize: 14),
+                                      );
+                                    }
+                                  },
+                                  child: Card(
+                                    elevation: 4,
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(color: Colors.deepOrange.withOpacity(0.3), width: 1),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        gradient: LinearGradient(
+                                          colors: [Colors.white, Colors.orange.withOpacity(0.05)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
                                         ),
-                                      ],
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.person_pin_circle,
+                                                  color: Colors.deepOrange,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                const Text(
+                                                  "Customer Address",
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.deepOrange.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: Row(
+                                                    children: const [
+                                                      Icon(
+                                                        Icons.directions,
+                                                        color: Colors.deepOrange,
+                                                        size: 16,
+                                                      ),
+                                                      SizedBox(width: 4),
+                                                      Text(
+                                                        "Directions",
+                                                        style: TextStyle(
+                                                          color: Colors.deepOrange,
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              _orderData['userFullAddress'] ??
+                                                  'No address provided',
+                                              style: const TextStyle(fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                               if (_orderData.containsKey('restaurantFullAddress') &&
                                   _orderData['restaurantFullAddress'] != null)
-                                Card(
-                                  elevation: 3,
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          "Restaurant Address",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                GestureDetector(
+                                  onTap: () {
+                                    // Get restaurant coordinates if available
+                                    double? lat;
+                                    double? lng;
+                                    
+                                    // Check if restaurantLocation coordinates exist
+                                    if (_orderData.containsKey('restaurantLocation') && 
+                                        _orderData['restaurantLocation'] != null &&
+                                        _orderData['restaurantLocation']['coordinates'] != null &&
+                                        _orderData['restaurantLocation']['coordinates'].length >= 2) {
+                                      // Format: {type: Point, coordinates: [longitude, latitude]}
+                                      lng = _orderData['restaurantLocation']['coordinates'][0];
+                                      lat = _orderData['restaurantLocation']['coordinates'][1];
+                                    }
+                                    
+                                    if (lat != null && lng != null) {
+                                      _openGoogleMapDirections(lat: lat, lng: lng);
+                                    } else {
+                                      // Fallback to default coordinates or show error
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'No location coordinates available for this restaurant',
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          _orderData['restaurantFullAddress'] ??
-                                              'No address provided',
-                                          style: const TextStyle(fontSize: 14),
+                                      );
+                                    }
+                                  },
+                                  child: Card(
+                                    elevation: 4,
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(color: Colors.deepOrange.withOpacity(0.3), width: 1),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        gradient: LinearGradient(
+                                          colors: [Colors.white, Colors.orange.withOpacity(0.05)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
                                         ),
-                                      ],
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.restaurant,
+                                                  color: Colors.deepOrange,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                const Text(
+                                                  "Restaurant Address",
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.deepOrange.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: Row(
+                                                    children: const [
+                                                      Icon(
+                                                        Icons.directions,
+                                                        color: Colors.deepOrange,
+                                                        size: 16,
+                                                      ),
+                                                      SizedBox(width: 4),
+                                                      Text(
+                                                        "Directions",
+                                                        style: TextStyle(
+                                                          color: Colors.deepOrange,
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              _orderData['restaurantFullAddress'] ??
+                                                  'No address provided',
+                                              style: const TextStyle(fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -825,61 +994,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
               ],
             ),
           ),
-          floatingActionButton: _hasOrderData
-              ? FloatingActionButton.extended(
-                  backgroundColor: Colors.deepOrange,
-                  elevation: 6,
-                  highlightElevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  icon: const Icon(Icons.directions, size: 24),
-                  label: const Text(
-                    "Get Directions",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  onPressed: () {
-                    // Use coordinates from order data if available
-                    double? lat;
-                    double? lng;
-                    
-                    // Check if customerLocation coordinates exist
-                    if (_orderData.containsKey('customerLocation') && 
-                        _orderData['customerLocation'] != null &&
-                        _orderData['customerLocation']['coordinates'] != null &&
-                        _orderData['customerLocation']['coordinates'].length >= 2) {
-                      // Format: {type: Point, coordinates: [longitude, latitude]}
-                      lng = _orderData['customerLocation']['coordinates'][0];
-                      lat = _orderData['customerLocation']['coordinates'][1];
-                    }
-                    // If no customer coordinates, check delivery coordinates
-                    else if (_orderData.containsKey('deliveryLocation') && 
-                        _orderData['deliveryLocation'] != null &&
-                        _orderData['deliveryLocation']['coordinates'] != null &&
-                        _orderData['deliveryLocation']['coordinates'].length >= 2) {
-                      lng = _orderData['deliveryLocation']['coordinates'][0];
-                      lat = _orderData['deliveryLocation']['coordinates'][1];
-                    }
-
-                    if (lat != null && lng != null) {
-                      _openGoogleMapDirections(lat: lat, lng: lng);
-                    } else {
-                      // Fallback to default coordinates or show error
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'No location coordinates available for this order',
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                )
-              : null, // Hide button when no order data is available
+          // Floating action button removed as directions are now available in the address cards
         ),
 
         // New Order Popup Overlay
