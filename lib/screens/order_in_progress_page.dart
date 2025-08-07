@@ -1,4 +1,5 @@
 // lib/order_in_progress_page.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -8,6 +9,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // Import the services
 import 'package:foodyah_delivery_app/services/location_permission_service.dart';
 import 'package:foodyah_delivery_app/services/tracking_status_service.dart';
+import 'package:foodyah_delivery_app/services/api_client.dart';
+import 'package:foodyah_delivery_app/Card/OrderDetailsCard.dart';
 
 class OrderInProgressPage extends StatefulWidget {
   const OrderInProgressPage({super.key});
@@ -21,10 +24,13 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
   bool serviceRunning = false;
   bool _isCheckingPermission = false;
   bool _showNewOrderPopup = false;
+  bool _isLoadingOrder = false;
+  bool _hasOrderData = false;
   Map<String, dynamic> _orderData = {};
   final FlutterBackgroundService _service = FlutterBackgroundService();
   final _storage = const FlutterSecureStorage();
   String _driverId = "";
+  String _orderId = "";
   final TrackingStatusService _trackingStatusService = TrackingStatusService();
 
   @override
@@ -33,6 +39,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     _initialize();
     _setupServiceListener();
     _loadDriverId();
+    _loadOrderId();
 
     // Force refresh tracking status when page initializes
     _forceRefreshTrackingStatus();
@@ -60,6 +67,95 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         });
       }
     });
+  }
+
+  // Load order ID from SharedPreferences
+  Future<void> _loadOrderId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final orderId = prefs.getString('currentOrderId');
+
+    if (orderId != null && orderId.isNotEmpty) {
+      setState(() {
+        _orderId = orderId;
+      });
+
+      // Fetch order details from API
+      _fetchOrderDetails(orderId);
+    }
+  }
+
+  // Fetch order details from API
+  Future<void> _fetchOrderDetails(String orderId) async {
+    if (orderId.isEmpty) return;
+
+    setState(() {
+      _isLoadingOrder = true;
+    });
+
+    try {
+      // Call the API to get order details
+      final response = await ApiClient.get(
+        '/getCurrentOrderForDeliveryBoy/$orderId',
+      );
+      debugPrint('API Response: $response');
+      debugPrint('Response type: ${response.runtimeType}');
+      
+      if (mounted) {
+        // Handle different response formats
+        Map<String, dynamic> orderData;
+        
+        if (response is String) {
+          // If response is a string, try to parse it as JSON
+          try {
+            orderData = jsonDecode(response);
+            debugPrint('Parsed string response to JSON: $orderData');
+          } catch (e) {
+            debugPrint('Failed to parse string response: $e');
+            orderData = {'error': 'Invalid response format'};
+          }
+        } else if (response is Map) {
+          // Check if the response has a nested 'order' object
+          if (response['success'] == true && response['order'] != null) {
+            if (response['order'] is Map) {
+              orderData = Map<String, dynamic>.from(response['order']);
+            } else {
+              debugPrint('Order is not a Map: ${response['order']}');
+              orderData = {'error': 'Invalid order format'};
+            }
+          } else {
+            orderData = Map<String, dynamic>.from(response);
+          }
+        } else {
+          debugPrint('Response is neither String nor Map: $response');
+          orderData = {'error': 'Unknown response format'};
+        }
+        
+        debugPrint('Final orderData: $orderData');
+        debugPrint('orderData type: ${orderData.runtimeType}');
+        debugPrint('orderData keys: ${orderData.keys.toList()}');
+            
+        setState(() {
+          _orderData = orderData;
+          _hasOrderData = true;
+          _isLoadingOrder = false;
+        });
+        debugPrint(
+          'Order details fetched successfully: ${orderData['_id'] ?? 'Unknown ID'}',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingOrder = false;
+        });
+        debugPrint('Error fetching order details: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load order details: ${e.toString()}'),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _forceRefreshTrackingStatus() async {
@@ -293,25 +389,28 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     final prefs = await SharedPreferences.getInstance();
 
     // Store order information in SharedPreferences for persistence
-    if (_orderData['orderId'] != null) {
-      await prefs.setString('currentOrderId', _orderData['orderId']);
+    // Make sure we're using the correct fields from the order data
+    final orderData = _orderData;
+    
+    if (orderData['_id'] != null) {
+      await prefs.setString('currentOrderId', orderData['_id']);
     }
-    if (_orderData['restaurantName'] != null) {
+    if (orderData['restaurantId'] != null) {
       await prefs.setString(
-        'currentRestaurantName',
-        _orderData['restaurantName'],
+        'currentRestaurantId',
+        orderData['restaurantId'],
       );
     }
-    if (_orderData['restaurantAddress'] != null) {
+    if (orderData['restaurantFullAddress'] != null) {
       await prefs.setString(
         'currentRestaurantAddress',
-        _orderData['restaurantAddress'],
+        orderData['restaurantFullAddress'],
       );
     }
-    if (_orderData['customerAddress'] != null) {
+    if (orderData['userFullAddress'] != null) {
       await prefs.setString(
         'currentCustomerAddress',
-        _orderData['customerAddress'],
+        orderData['userFullAddress'],
       );
     }
 
@@ -324,7 +423,13 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     }
 
     // Signal background to start emitting location with driver ID and order info
-    _service.invoke("startLocationTracking", _orderData);
+    // Make sure we're passing the correct order data to the background service
+    _service.invoke("startLocationTracking", {
+      'orderId': orderData['_id'] ?? '',
+      'restaurantId': orderData['restaurantId'] ?? '',
+      'restaurantAddress': orderData['restaurantFullAddress'] ?? '',
+      'customerAddress': orderData['userFullAddress'] ?? ''
+    });
 
     setState(() {
       _showNewOrderPopup = false;
@@ -567,71 +672,214 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                     ),
                   ),
                 const SizedBox(height: 30),
-                // Waiting for orders section with improved design
+                // Order details or waiting for orders section
                 Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.deepOrange.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.delivery_dining,
-                            size: 64,
+                  child: _isLoadingOrder
+                      ? const Center(
+                          child: CircularProgressIndicator(
                             color: Colors.deepOrange,
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          "Waiting for new delivery requests...",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepOrange,
+                        )
+                      : _hasOrderData
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Current Order Details",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.deepOrange[700],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.refresh,
+                                        color: Colors.deepOrange,
+                                      ),
+                                      onPressed: () {
+                                        if (_orderId.isNotEmpty) {
+                                          _fetchOrderDetails(_orderId);
+                                        }
+                                      },
+                                      tooltip: 'Refresh order details',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              OrderDetailsCard(orderData: _orderData),
+                              const SizedBox(height: 16),
+                              if (_orderData.containsKey('userFullAddress') &&
+                                  _orderData['userFullAddress'] != null)
+                                Card(
+                                  elevation: 3,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Customer Address",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          _orderData['userFullAddress'] ??
+                                              'No address provided',
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              if (_orderData.containsKey('restaurantFullAddress') &&
+                                  _orderData['restaurantFullAddress'] != null)
+                                Card(
+                                  elevation: 3,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Restaurant Address",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          _orderData['restaurantFullAddress'] ??
+                                              'No address provided',
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: Colors.deepOrange.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.delivery_dining,
+                                  size: 64,
+                                  color: Colors.deepOrange,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              const Text(
+                                "Waiting for new delivery requests...",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.deepOrange,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                isTracking
+                                    ? "You're online and ready to receive orders"
+                                    : "Go online to start receiving delivery requests",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          isTracking
-                              ? "You're online and ready to receive orders"
-                              : "Go online to start receiving delivery requests",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ],
             ),
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: Colors.deepOrange,
-            elevation: 6,
-            highlightElevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            icon: const Icon(Icons.directions, size: 24),
-            label: const Text(
-              "Get Directions",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                letterSpacing: 0.5,
-              ),
-            ),
-            onPressed: () {
-              _openGoogleMapDirections(lat: 22.5726, lng: 88.3639);
-            },
-          ),
+          floatingActionButton: _hasOrderData
+              ? FloatingActionButton.extended(
+                  backgroundColor: Colors.deepOrange,
+                  elevation: 6,
+                  highlightElevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  icon: const Icon(Icons.directions, size: 24),
+                  label: const Text(
+                    "Get Directions",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  onPressed: () {
+                    // Use coordinates from order data if available
+                    double? lat;
+                    double? lng;
+                    
+                    // Check if customerLocation coordinates exist
+                    if (_orderData.containsKey('customerLocation') && 
+                        _orderData['customerLocation'] != null &&
+                        _orderData['customerLocation']['coordinates'] != null &&
+                        _orderData['customerLocation']['coordinates'].length >= 2) {
+                      // Format: {type: Point, coordinates: [longitude, latitude]}
+                      lng = _orderData['customerLocation']['coordinates'][0];
+                      lat = _orderData['customerLocation']['coordinates'][1];
+                    }
+                    // If no customer coordinates, check delivery coordinates
+                    else if (_orderData.containsKey('deliveryLocation') && 
+                        _orderData['deliveryLocation'] != null &&
+                        _orderData['deliveryLocation']['coordinates'] != null &&
+                        _orderData['deliveryLocation']['coordinates'].length >= 2) {
+                      lng = _orderData['deliveryLocation']['coordinates'][0];
+                      lat = _orderData['deliveryLocation']['coordinates'][1];
+                    }
+
+                    if (lat != null && lng != null) {
+                      _openGoogleMapDirections(lat: lat, lng: lng);
+                    } else {
+                      // Fallback to default coordinates or show error
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'No location coordinates available for this order',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                )
+              : null, // Hide button when no order data is available
         ),
 
         // New Order Popup Overlay
