@@ -91,6 +91,34 @@ class SharedPreferencesManager {
     debugPrint('SharedPreferencesManager: All values loaded and emitted');
   }
 
+  /// Force reload all values from SharedPreferences (useful for background services)
+  Future<void> reloadValues() async {
+    if (_prefs == null) return;
+
+    _isTracking = _prefs!.getBool('isTracking') ?? false;
+    _currentOrderId = _prefs!.getString('currentOrderId');
+    _currentRestaurantId = _prefs!.getString('currentRestaurantId');
+    _currentRestaurantAddress = _prefs!.getString('currentRestaurantAddress');
+    _currentCustomerAddress = _prefs!.getString('currentCustomerAddress');
+    _driverId = _prefs!.getString('driverId');
+    _socketServerUrlAndroid = _prefs!.getString('SOCKET_SERVER_URL_ANDROID');
+    _socketServerUrlIos = _prefs!.getString('SOCKET_SERVER_URL_IOS');
+    _serviceRunning = _prefs!.getBool('serviceRunning') ?? false;
+
+    // Emit initial values
+    _isTrackingController.add(_isTracking);
+    _currentOrderIdController.add(_currentOrderId);
+    _currentRestaurantIdController.add(_currentRestaurantId);
+    _currentRestaurantAddressController.add(_currentRestaurantAddress);
+    _currentCustomerAddressController.add(_currentCustomerAddress);
+    _driverIdController.add(_driverId);
+    _socketServerUrlAndroidController.add(_socketServerUrlAndroid);
+    _socketServerUrlIosController.add(_socketServerUrlIos);
+    _serviceRunningController.add(_serviceRunning);
+
+    debugPrint('SharedPreferencesManager: All values loaded and emitted');
+  }
+
   /// Update tracking status
   Future<void> setIsTracking(bool value) async {
     if (_prefs == null) return;

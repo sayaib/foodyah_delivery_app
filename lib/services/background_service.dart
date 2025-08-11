@@ -194,9 +194,17 @@ void _handleDeliveryRequest(dynamic data, ServiceInstance service) async {
   );
 
   // Check if there's already an active order
-  final prefsManager = SharedPreferencesManager();
-  await prefsManager.initialize();
-  final existingOrderId = prefsManager.currentOrderId;
+  // Background services run in separate isolates, so we need to get fresh SharedPreferences directly
+  // Add a small delay to ensure SharedPreferences is fully synchronized
+  await Future.delayed(Duration(milliseconds: 100));
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.reload(); // Force reload from disk
+  final existingOrderId = prefs.getString('currentOrderId');
+  final allKeys = prefs.getKeys();
+  
+  debugPrint('🔍 BG_SERVICE: Direct SharedPreferences read, currentOrderId = $existingOrderId');
+  debugPrint('🔍 BG_SERVICE: All SharedPreferences keys: $allKeys');
+  debugPrint('🔍 BG_SERVICE: Contains currentOrderId key: ${allKeys.contains('currentOrderId')}');
   
   if (existingOrderId != null && existingOrderId.isNotEmpty) {
     debugPrint('🚫 BG_SERVICE: Rejecting delivery request - already have active order: $existingOrderId');

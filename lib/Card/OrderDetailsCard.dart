@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../screens/socket/DeliverySocketService.dart';
 import '../services/shared_preferences_manager.dart';
 
 class OrderDetailsCard extends StatelessWidget {
@@ -38,11 +37,15 @@ class OrderDetailsCard extends StatelessWidget {
   Future<void> _handleDelivered(BuildContext context) async {
     try {
       final prefsManager = SharedPreferencesManager();
-      await prefsManager.clearOrderData();
-
-      // Notify socket service that order is completed
-      final socketService = DeliverySocketService();
-      await socketService.notifyOrderCompleted();
+    await prefsManager.initialize();
+    debugPrint('📋 About to clear order data...');
+    await prefsManager.clearOrderData();
+    debugPrint('📋 Order data cleared, verifying...');
+    
+    // Verify the data was actually cleared
+    final verifyOrderId = prefsManager.currentOrderId;
+    debugPrint('📋 Verification: currentOrderId after clear = $verifyOrderId');
+    debugPrint('📋 Order marked as delivered and data cleared');
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
