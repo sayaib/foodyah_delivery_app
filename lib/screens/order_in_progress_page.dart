@@ -69,6 +69,27 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         });
       }
     });
+
+    // Listen to currentOrderId changes
+    _prefsManager.currentOrderIdStream.listen((orderId) {
+      if (mounted) {
+        debugPrint(
+          'OrderInProgressPage: currentOrderId changed to $orderId',
+        );
+        if (orderId != null && orderId.isNotEmpty) {
+          setState(() {
+            _orderId = orderId;
+          });
+          _fetchOrderDetails(orderId);
+        } else {
+          setState(() {
+            _orderId = '';
+            _orderData = {};
+            _hasOrderData = false;
+          });
+        }
+      }
+    });
   }
 
   // Load order ID from SharedPreferences
@@ -195,6 +216,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     // Refresh status when page becomes visible
     _loadTrackingStatus();
     _checkServiceStatus();
+    _loadOrderId(); // Reload order data when page becomes visible
     debugPrint(
       'OrderInProgressPage: didChangeDependencies called, refreshing status',
     );
@@ -410,6 +432,9 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
 
     setState(() {
       _showNewOrderPopup = false;
+      _orderId = orderData['_id'] ?? '';
+      _hasOrderData = true;
+      // Keep the current _orderData as it's already populated from the popup
     });
 
     // Show confirmation to user
