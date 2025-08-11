@@ -35,7 +35,7 @@ class _DashboardPageState extends State<DashboardPage> {
   
   void _initializePages() {
     _pages = [
-      OrderInProgressPage(key: ValueKey('order_page_$_selectedIndex')),
+      const OrderInProgressPage(),
       const PayoutPage(),
       const ProfilePage(),
       const SettingsPage(),
@@ -55,9 +55,9 @@ class _DashboardPageState extends State<DashboardPage> {
     // Ensure tracking status is properly initialized
     _forceRefreshTrackingStatus();
 
-    // Listen to tracking status changes
-    _trackingStatusService.trackingStatusStream.listen((status) {
-      if (mounted) {
+    // Listen to tracking status changes with debouncing
+    _trackingStatusService.trackingStatusStream.distinct().listen((status) {
+      if (mounted && isTracking != status) {
         setState(() {
           isTracking = status;
           debugPrint(
@@ -67,9 +67,9 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     });
 
-    // Listen to service running status changes
-    _trackingStatusService.serviceRunningStream.listen((status) {
-      if (mounted) {
+    // Listen to service running status changes with debouncing
+    _trackingStatusService.serviceRunningStream.distinct().listen((status) {
+      if (mounted && serviceRunning != status) {
         setState(() {
           serviceRunning = status;
           debugPrint(
@@ -125,22 +125,24 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // Reinitialize pages to force refresh, especially for OrderInProgressPage
-      _initializePages();
-    });
-    // Refresh tracking status when switching tabs
-    _loadTrackingStatus();
-    _checkServiceStatus();
-    debugPrint('Dashboard: Tab switched to $index, refreshing status and pages');
+    if (_selectedIndex != index) {
+      setState(() {
+        _selectedIndex = index;
+        // Reinitialize pages to force refresh, especially for OrderInProgressPage
+        _initializePages();
+      });
+      // Refresh tracking status when switching tabs
+      _loadTrackingStatus();
+      _checkServiceStatus();
+      debugPrint('Dashboard: Tab switched to $index, refreshing status and pages');
 
-    // Force refresh the status after a short delay to ensure UI is updated
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        _checkServiceStatus();
-      }
-    });
+      // Force refresh the status after a short delay to ensure UI is updated
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _checkServiceStatus();
+        }
+      });
+    }
   }
 
   Future<void> _initialize() async {

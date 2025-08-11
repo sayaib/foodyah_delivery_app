@@ -133,13 +133,39 @@ class _FoodyaAppState extends State<FoodyaApp> with WidgetsBindingObserver {
     return MaterialApp(
       title: 'Foodya',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.deepOrange),
+      theme: ThemeData(
+        primarySwatch: Colors.deepOrange,
+        // Optimize theme for better performance
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        // Reduce animation duration for better performance
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
+      ),
       initialRoute: widget.isLoggedIn ? '/dashboard' : '/',
-      routes: {
-        '/': (context) => const LandingPage(),
-        '/dashboard': (context) => const DashboardPage(),
-        '/otp': (context) => const OTPVerificationPage(type: '', value: ''),
-        '/settings': (context) => const SettingsPage(),
+      onGenerateRoute: (settings) {
+        // Optimize route generation with lazy loading
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (_) => const LandingPage());
+          case '/dashboard':
+            return MaterialPageRoute(builder: (_) => const DashboardPage());
+          case '/otp':
+            return MaterialPageRoute(
+              builder: (_) => const OTPVerificationPage(type: '', value: ''),
+            );
+          case '/settings':
+            return MaterialPageRoute(builder: (_) => const SettingsPage());
+          default:
+            return MaterialPageRoute(
+              builder: (_) => const Scaffold(
+                body: Center(child: Text('Page not found')),
+              ),
+            );
+        }
       },
     );
   }

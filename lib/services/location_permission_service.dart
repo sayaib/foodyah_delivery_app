@@ -6,6 +6,20 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:io';
 
 class LocationPermissionService {
+  // Cache permission status to avoid repeated checks
+  static PermissionStatus? _cachedLocationStatus;
+  static PermissionStatus? _cachedBackgroundStatus;
+  static DateTime? _lastPermissionCheck;
+  
+  // Cache duration (5 minutes)
+  static const Duration _cacheValidDuration = Duration(minutes: 5);
+  
+  // Check if cache is still valid
+  static bool _isCacheValid() {
+    return _lastPermissionCheck != null &&
+        DateTime.now().difference(_lastPermissionCheck!).compareTo(_cacheValidDuration) < 0;
+  }
+  
   // A helper function to show a dialog to the user
   static Future<void> _showPermissionDialog(
     BuildContext context,
@@ -62,11 +76,21 @@ class LocationPermissionService {
     }
   }
 
-  // Main function to handle location permission requests.
+  // Main function to handle location permission requests with caching
   static Future<bool> requestLocationPermission(BuildContext context) async {
     debugPrint("Requesting location permission...");
-    var status = await Permission.location.status;
-    debugPrint("Current location permission status: $status");
+    
+    // Use cached status if available and valid
+    PermissionStatus status;
+    if (_isCacheValid() && _cachedLocationStatus != null) {
+      status = _cachedLocationStatus!;
+      debugPrint("Using cached location permission status: $status");
+    } else {
+      status = await Permission.location.status;
+      _cachedLocationStatus = status;
+      _lastPermissionCheck = DateTime.now();
+      debugPrint("Current location permission status: $status");
+    }
 
     // FIXED: Use '==' for enum comparison instead of .isGranted
     if (status == PermissionStatus.granted) {
@@ -129,13 +153,23 @@ class LocationPermissionService {
     return false;
   }
 
-  // Function to handle the "Always" / Background location permission
+  // Function to handle the "Always" / Background location permission with caching
   static Future<bool> requestBackgroundLocationPermission(
     BuildContext context,
   ) async {
     debugPrint("Requesting background location permission...");
-    var status = await Permission.locationAlways.status;
-    debugPrint("Current background location permission status: $status");
+    
+    // Use cached status if available and valid
+    PermissionStatus status;
+    if (_isCacheValid() && _cachedBackgroundStatus != null) {
+      status = _cachedBackgroundStatus!;
+      debugPrint("Using cached background location permission status: $status");
+    } else {
+      status = await Permission.locationAlways.status;
+      _cachedBackgroundStatus = status;
+      _lastPermissionCheck = DateTime.now();
+      debugPrint("Current background location permission status: $status");
+    }
 
     // FIXED: Use '==' for enum comparison
     if (status == PermissionStatus.granted) {
@@ -174,6 +208,8 @@ class LocationPermissionService {
       );
       // FIXED: Awaited the request and then compared the resulting status.
       final newStatus = await Permission.locationAlways.request();
+      _cachedBackgroundStatus = newStatus;
+      _lastPermissionCheck = DateTime.now();
       debugPrint(
         "After request, background location permission status: $newStatus",
       );

@@ -1,6 +1,7 @@
 // lib/services/background_service.dart
 import 'dart:async';
 import 'dart:ui';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
@@ -10,6 +11,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:io' show Platform;
 import 'shared_preferences_manager.dart';
+
+// Global variables for location tracking optimization
+DateTime? _lastLocationUpdate;
+Position? _lastKnownPosition;
 
 @pragma('vm:entry-point')
 Future<void> initializeService() async {
@@ -85,6 +90,22 @@ void onStart(ServiceInstance service) async {
 
   socket.connect();
 
+  // Helper function to determine if location update should be sent
+  bool _shouldSendLocationUpdate(Position newPosition) {
+    if (_lastKnownPosition == null) return true;
+    
+    // Calculate distance between last known position and new position
+    final distance = Geolocator.distanceBetween(
+      _lastKnownPosition!.latitude,
+      _lastKnownPosition!.longitude,
+      newPosition.latitude,
+      newPosition.longitude,
+    );
+    
+    // Send update if moved more than 50 meters
+    return distance > 50;
+  }
+
   // Function to start listening to location updates
   void startLocationStream() {
     // If already listening, do nothing
@@ -93,14 +114,14 @@ void onStart(ServiceInstance service) async {
     final locationSettings = Platform.isAndroid
         ? AndroidSettings(
             accuracy: LocationAccuracy.high,
-            distanceFilter: 10, // Update every 10 meters
+            distanceFilter: 15, // Update every 15 meters (reduced frequency)
             forceLocationManager: true,
-            intervalDuration: const Duration(seconds: 20), // Update every 10s
+            intervalDuration: const Duration(seconds: 30), // Update every 30s (reduced frequency)
           )
         : AppleSettings(
             accuracy: LocationAccuracy.high,
             activityType: ActivityType.automotiveNavigation,
-            distanceFilter: 10, // Update every 10 meters
+            distanceFilter: 15, // Update every 15 meters (reduced frequency)
             pauseLocationUpdatesAutomatically: true,
             // IMPORTANT: These allow background updates on iOS
             showBackgroundLocationIndicator: true,
@@ -113,20 +134,31 @@ void onStart(ServiceInstance service) async {
             final driverId = prefsManager.driverId ?? 'driver_007';
             final orderId = prefsManager.currentOrderId ?? '';
 
-            if (socket.connected) {
-              socket.emit('updateLocation', {
-                'driverId': driverId,
-                'latitude': position.latitude,
-                'longitude': position.longitude,
-                'orderId': orderId,
-              });
-              debugPrint(
-                '📍 BG_SERVICE: Location sent: ${position.latitude}, ${position.longitude}, orderId: $orderId',
-              );
-            } else {
-              debugPrint(
-                '⚠️ BG_SERVICE: Cannot send location, socket not connected.',
-              );
+            // Batch location updates to reduce network calls
+            _lastLocationUpdate ??= DateTime.now();
+            final now = DateTime.now();
+            
+            // Only send location if 30 seconds have passed or significant distance change
+            if (now.difference(_lastLocationUpdate!).inSeconds >= 30 || 
+                _shouldSendLocationUpdate(position)) {
+              if (socket.connected) {
+                socket.emit('updateLocation', {
+                  'driverId': driverId,
+                  'latitude': position.latitude,
+                  'longitude': position.longitude,
+                  'orderId': orderId,
+                  'timestamp': now.millisecondsSinceEpoch,
+                });
+                debugPrint(
+                  '📍 BG_SERVICE: Location sent: ${position.latitude}, ${position.longitude}, orderId: $orderId',
+                );
+                _lastLocationUpdate = now;
+                _lastKnownPosition = position;
+              } else {
+                debugPrint(
+                  '⚠️ BG_SERVICE: Cannot send location, socket not connected.',
+                );
+              }
             }
 
             // Update notification on both platforms

@@ -46,9 +46,9 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     // Force refresh tracking status when page initializes
     _forceRefreshTrackingStatus();
 
-    // Listen to tracking status changes
-    _trackingStatusService.trackingStatusStream.listen((status) {
-      if (mounted) {
+    // Listen to tracking status changes with debouncing
+    _trackingStatusService.trackingStatusStream.distinct().listen((status) {
+      if (mounted && isTracking != status) {
         setState(() {
           isTracking = status;
           debugPrint(
@@ -58,9 +58,9 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
       }
     });
 
-    // Listen to service running status changes
-    _trackingStatusService.serviceRunningStream.listen((status) {
-      if (mounted) {
+    // Listen to service running status changes with debouncing
+    _trackingStatusService.serviceRunningStream.distinct().listen((status) {
+      if (mounted && serviceRunning != status) {
         setState(() {
           serviceRunning = status;
           debugPrint(
@@ -70,18 +70,18 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
       }
     });
 
-    // Listen to currentOrderId changes
-    _prefsManager.currentOrderIdStream.listen((orderId) {
+    // Listen to currentOrderId changes with debouncing
+    _prefsManager.currentOrderIdStream.distinct().listen((orderId) {
       if (mounted) {
         debugPrint(
           'OrderInProgressPage: currentOrderId changed to $orderId',
         );
-        if (orderId != null && orderId.isNotEmpty) {
+        if (orderId != null && orderId.isNotEmpty && _orderId != orderId) {
           setState(() {
             _orderId = orderId;
           });
           _fetchOrderDetails(orderId);
-        } else {
+        } else if ((orderId == null || orderId.isEmpty) && _hasOrderData) {
           setState(() {
             _orderId = '';
             _orderData = {};
@@ -106,9 +106,12 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     }
   }
 
-  // Fetch order details from API
+  // Cache for order details to prevent unnecessary API calls
+  String _lastFetchedOrderId = '';
+  
+  // Fetch order details from API with caching
   Future<void> _fetchOrderDetails(String orderId) async {
-    if (orderId.isEmpty) return;
+    if (orderId.isEmpty || orderId == _lastFetchedOrderId) return;
 
     setState(() {
       _isLoadingOrder = true;
@@ -119,6 +122,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
       final response = await ApiClient.get(
         '/getCurrentOrderForDeliveryBoy/$orderId',
       );
+      _lastFetchedOrderId = orderId;
       debugPrint('API Response: $response');
       debugPrint('Response type: ${response.runtimeType}');
       

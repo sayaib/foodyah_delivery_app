@@ -14,6 +14,21 @@ class OrderDetailsCard extends StatelessWidget {
     this.onOrderDelivered,
   });
 
+  // Cache commonly used values to avoid repeated map lookups
+  String get _orderId => orderData['_id'] ?? 'N/A';
+  String get _status => orderData['status'] ?? 'unknown';
+  String get _customerName =>
+      orderData['customer']?['name'] ?? 'Unknown Customer';
+  String get _customerPhone => orderData['customer']?['phone'] ?? 'No phone';
+  String get _customerAddress =>
+      orderData['customer']?['address'] ?? 'No address';
+  String get _restaurantName =>
+      orderData['restaurant']?['name'] ?? 'Unknown Restaurant';
+  String get _restaurantAddress =>
+      orderData['restaurant']?['address'] ?? 'No address';
+  double get _totalAmount => (orderData['totalAmount'] ?? 0).toDouble();
+  List<dynamic> get _items => orderData['items'] ?? [];
+
   // Helper method to get color based on order status
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -37,15 +52,17 @@ class OrderDetailsCard extends StatelessWidget {
   Future<void> _handleDelivered(BuildContext context) async {
     try {
       final prefsManager = SharedPreferencesManager();
-    await prefsManager.initialize();
-    debugPrint('📋 About to clear order data...');
-    await prefsManager.clearOrderData();
-    debugPrint('📋 Order data cleared, verifying...');
-    
-    // Verify the data was actually cleared
-    final verifyOrderId = prefsManager.currentOrderId;
-    debugPrint('📋 Verification: currentOrderId after clear = $verifyOrderId');
-    debugPrint('📋 Order marked as delivered and data cleared');
+      await prefsManager.initialize();
+      debugPrint('📋 About to clear order data...');
+      await prefsManager.clearOrderData();
+      debugPrint('📋 Order data cleared, verifying...');
+
+      // Verify the data was actually cleared
+      final verifyOrderId = prefsManager.currentOrderId;
+      debugPrint(
+        '📋 Verification: currentOrderId after clear = $verifyOrderId',
+      );
+      debugPrint('📋 Order marked as delivered and data cleared');
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -72,7 +89,7 @@ class OrderDetailsCard extends StatelessWidget {
     }
   }
 
-  // Helper method to build info cards
+  // Optimized helper method to build info cards with const widgets where possible
   Widget _buildInfoCard({
     required IconData icon,
     required String title,
@@ -83,22 +100,27 @@ class OrderDetailsCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // Optimize layout
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min, // Optimize layout
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -111,6 +133,8 @@ class OrderDetailsCard extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

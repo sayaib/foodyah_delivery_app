@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// A global state management service for SharedPreferences
-/// Provides real-time updates across the entire application
+/// Singleton class to manage SharedPreferences data and provide streams for real-time updates
 class SharedPreferencesManager {
   // Singleton instance
   static final SharedPreferencesManager _instance = SharedPreferencesManager._internal();
@@ -12,17 +11,64 @@ class SharedPreferencesManager {
   SharedPreferencesManager._internal();
 
   SharedPreferences? _prefs;
-  
-  // Stream controllers for real-time updates
-  final StreamController<bool> _isTrackingController = StreamController<bool>.broadcast();
-  final StreamController<String?> _currentOrderIdController = StreamController<String?>.broadcast();
-  final StreamController<String?> _currentRestaurantIdController = StreamController<String?>.broadcast();
-  final StreamController<String?> _currentRestaurantAddressController = StreamController<String?>.broadcast();
-  final StreamController<String?> _currentCustomerAddressController = StreamController<String?>.broadcast();
-  final StreamController<String?> _driverIdController = StreamController<String?>.broadcast();
-  final StreamController<String?> _socketServerUrlAndroidController = StreamController<String?>.broadcast();
-  final StreamController<String?> _socketServerUrlIosController = StreamController<String?>.broadcast();
-  final StreamController<bool> _serviceRunningController = StreamController<bool>.broadcast();
+  bool _isInitialized = false;
+
+  // Stream controllers for real-time updates with lazy initialization
+  StreamController<bool>? _isTrackingController;
+  StreamController<String?>? _currentOrderIdController;
+  StreamController<String?>? _currentRestaurantIdController;
+  StreamController<String?>? _currentRestaurantAddressController;
+  StreamController<String?>? _currentCustomerAddressController;
+  StreamController<String?>? _driverIdController;
+  StreamController<String?>? _socketServerUrlAndroidController;
+  StreamController<String?>? _socketServerUrlIosController;
+  StreamController<bool>? _serviceRunningController;
+
+  // Lazy getters for stream controllers
+  StreamController<bool> get _isTrackingControllerInstance {
+    _isTrackingController ??= StreamController<bool>.broadcast();
+    return _isTrackingController!;
+  }
+
+  StreamController<String?> get _currentOrderIdControllerInstance {
+    _currentOrderIdController ??= StreamController<String?>.broadcast();
+    return _currentOrderIdController!;
+  }
+
+  StreamController<String?> get _currentRestaurantIdControllerInstance {
+    _currentRestaurantIdController ??= StreamController<String?>.broadcast();
+    return _currentRestaurantIdController!;
+  }
+
+  StreamController<String?> get _currentRestaurantAddressControllerInstance {
+    _currentRestaurantAddressController ??= StreamController<String?>.broadcast();
+    return _currentRestaurantAddressController!;
+  }
+
+  StreamController<String?> get _currentCustomerAddressControllerInstance {
+    _currentCustomerAddressController ??= StreamController<String?>.broadcast();
+    return _currentCustomerAddressController!;
+  }
+
+  StreamController<String?> get _driverIdControllerInstance {
+    _driverIdController ??= StreamController<String?>.broadcast();
+    return _driverIdController!;
+  }
+
+  StreamController<String?> get _socketServerUrlAndroidControllerInstance {
+    _socketServerUrlAndroidController ??= StreamController<String?>.broadcast();
+    return _socketServerUrlAndroidController!;
+  }
+
+  StreamController<String?> get _socketServerUrlIosControllerInstance {
+    _socketServerUrlIosController ??= StreamController<String?>.broadcast();
+    return _socketServerUrlIosController!;
+  }
+
+  StreamController<bool> get _serviceRunningControllerInstance {
+    _serviceRunningController ??= StreamController<bool>.broadcast();
+    return _serviceRunningController!;
+  }
 
   // Cached values for immediate access
   bool _isTracking = false;
@@ -35,16 +81,16 @@ class SharedPreferencesManager {
   String? _socketServerUrlIos;
   bool _serviceRunning = false;
 
-  // Getters for streams
-  Stream<bool> get isTrackingStream => _isTrackingController.stream;
-  Stream<String?> get currentOrderIdStream => _currentOrderIdController.stream;
-  Stream<String?> get currentRestaurantIdStream => _currentRestaurantIdController.stream;
-  Stream<String?> get currentRestaurantAddressStream => _currentRestaurantAddressController.stream;
-  Stream<String?> get currentCustomerAddressStream => _currentCustomerAddressController.stream;
-  Stream<String?> get driverIdStream => _driverIdController.stream;
-  Stream<String?> get socketServerUrlAndroidStream => _socketServerUrlAndroidController.stream;
-  Stream<String?> get socketServerUrlIosStream => _socketServerUrlIosController.stream;
-  Stream<bool> get serviceRunningStream => _serviceRunningController.stream;
+  // Streams for external access with lazy initialization
+  Stream<bool> get isTrackingStream => _isTrackingControllerInstance.stream;
+  Stream<String?> get currentOrderIdStream => _currentOrderIdControllerInstance.stream;
+  Stream<String?> get currentRestaurantIdStream => _currentRestaurantIdControllerInstance.stream;
+  Stream<String?> get currentRestaurantAddressStream => _currentRestaurantAddressControllerInstance.stream;
+  Stream<String?> get currentCustomerAddressStream => _currentCustomerAddressControllerInstance.stream;
+  Stream<String?> get driverIdStream => _driverIdControllerInstance.stream;
+  Stream<String?> get socketServerUrlAndroidStream => _socketServerUrlAndroidControllerInstance.stream;
+  Stream<String?> get socketServerUrlIosStream => _socketServerUrlIosControllerInstance.stream;
+  Stream<bool> get serviceRunningStream => _serviceRunningControllerInstance.stream;
 
   // Getters for cached values
   bool get isTracking => _isTracking;
@@ -57,10 +103,14 @@ class SharedPreferencesManager {
   String? get socketServerUrlIos => _socketServerUrlIos;
   bool get serviceRunning => _serviceRunning;
 
-  /// Initialize the service
+  /// Initialize SharedPreferences and load all values
   Future<void> initialize() async {
+    if (_isInitialized) return; // Prevent multiple initializations
+    
     _prefs = await SharedPreferences.getInstance();
     await _loadAllValues();
+    _isInitialized = true;
+    debugPrint('SharedPreferencesManager: Initialized successfully');
   }
 
   /// Load all values from SharedPreferences and emit initial values
@@ -77,16 +127,16 @@ class SharedPreferencesManager {
     _socketServerUrlIos = _prefs!.getString('SOCKET_SERVER_URL_IOS');
     _serviceRunning = _prefs!.getBool('serviceRunning') ?? false;
 
-    // Emit initial values
-    _isTrackingController.add(_isTracking);
-    _currentOrderIdController.add(_currentOrderId);
-    _currentRestaurantIdController.add(_currentRestaurantId);
-    _currentRestaurantAddressController.add(_currentRestaurantAddress);
-    _currentCustomerAddressController.add(_currentCustomerAddress);
-    _driverIdController.add(_driverId);
-    _socketServerUrlAndroidController.add(_socketServerUrlAndroid);
-    _socketServerUrlIosController.add(_socketServerUrlIos);
-    _serviceRunningController.add(_serviceRunning);
+    // Emit initial values only if controllers are initialized
+    if (_isTrackingController != null) _isTrackingController!.add(_isTracking);
+    if (_currentOrderIdController != null) _currentOrderIdController!.add(_currentOrderId);
+    if (_currentRestaurantIdController != null) _currentRestaurantIdController!.add(_currentRestaurantId);
+    if (_currentRestaurantAddressController != null) _currentRestaurantAddressController!.add(_currentRestaurantAddress);
+    if (_currentCustomerAddressController != null) _currentCustomerAddressController!.add(_currentCustomerAddress);
+    if (_driverIdController != null) _driverIdController!.add(_driverId);
+    if (_socketServerUrlAndroidController != null) _socketServerUrlAndroidController!.add(_socketServerUrlAndroid);
+    if (_socketServerUrlIosController != null) _socketServerUrlIosController!.add(_socketServerUrlIos);
+    if (_serviceRunningController != null) _serviceRunningController!.add(_serviceRunning);
 
     debugPrint('SharedPreferencesManager: All values loaded and emitted');
   }
@@ -105,16 +155,16 @@ class SharedPreferencesManager {
     _socketServerUrlIos = _prefs!.getString('SOCKET_SERVER_URL_IOS');
     _serviceRunning = _prefs!.getBool('serviceRunning') ?? false;
 
-    // Emit initial values
-    _isTrackingController.add(_isTracking);
-    _currentOrderIdController.add(_currentOrderId);
-    _currentRestaurantIdController.add(_currentRestaurantId);
-    _currentRestaurantAddressController.add(_currentRestaurantAddress);
-    _currentCustomerAddressController.add(_currentCustomerAddress);
-    _driverIdController.add(_driverId);
-    _socketServerUrlAndroidController.add(_socketServerUrlAndroid);
-    _socketServerUrlIosController.add(_socketServerUrlIos);
-    _serviceRunningController.add(_serviceRunning);
+    // Emit initial values only if controllers are initialized
+    if (_isTrackingController != null) _isTrackingController!.add(_isTracking);
+    if (_currentOrderIdController != null) _currentOrderIdController!.add(_currentOrderId);
+    if (_currentRestaurantIdController != null) _currentRestaurantIdController!.add(_currentRestaurantId);
+    if (_currentRestaurantAddressController != null) _currentRestaurantAddressController!.add(_currentRestaurantAddress);
+    if (_currentCustomerAddressController != null) _currentCustomerAddressController!.add(_currentCustomerAddress);
+    if (_driverIdController != null) _driverIdController!.add(_driverId);
+    if (_socketServerUrlAndroidController != null) _socketServerUrlAndroidController!.add(_socketServerUrlAndroid);
+    if (_socketServerUrlIosController != null) _socketServerUrlIosController!.add(_socketServerUrlIos);
+    if (_serviceRunningController != null) _serviceRunningController!.add(_serviceRunning);
 
     debugPrint('SharedPreferencesManager: All values loaded and emitted');
   }
@@ -125,7 +175,7 @@ class SharedPreferencesManager {
     
     _isTracking = value;
     await _prefs!.setBool('isTracking', value);
-    _isTrackingController.add(value);
+    _isTrackingControllerInstance.add(value);
     debugPrint('SharedPreferencesManager: isTracking updated to $value');
   }
 
@@ -139,7 +189,7 @@ class SharedPreferencesManager {
     } else {
       await _prefs!.remove('currentOrderId');
     }
-    _currentOrderIdController.add(value);
+    _currentOrderIdControllerInstance.add(value);
     debugPrint('SharedPreferencesManager: currentOrderId updated to $value');
   }
 
@@ -153,7 +203,7 @@ class SharedPreferencesManager {
     } else {
       await _prefs!.remove('currentRestaurantId');
     }
-    _currentRestaurantIdController.add(value);
+    _currentRestaurantIdControllerInstance.add(value);
     debugPrint('SharedPreferencesManager: currentRestaurantId updated to $value');
   }
 
@@ -167,7 +217,7 @@ class SharedPreferencesManager {
     } else {
       await _prefs!.remove('currentRestaurantAddress');
     }
-    _currentRestaurantAddressController.add(value);
+    _currentRestaurantAddressControllerInstance.add(value);
     debugPrint('SharedPreferencesManager: currentRestaurantAddress updated to $value');
   }
 
@@ -181,7 +231,7 @@ class SharedPreferencesManager {
     } else {
       await _prefs!.remove('currentCustomerAddress');
     }
-    _currentCustomerAddressController.add(value);
+    _currentCustomerAddressControllerInstance.add(value);
     debugPrint('SharedPreferencesManager: currentCustomerAddress updated to $value');
   }
 
@@ -195,7 +245,7 @@ class SharedPreferencesManager {
     } else {
       await _prefs!.remove('driverId');
     }
-    _driverIdController.add(value);
+    _driverIdControllerInstance.add(value);
     debugPrint('SharedPreferencesManager: driverId updated to $value');
   }
 
@@ -209,7 +259,7 @@ class SharedPreferencesManager {
     } else {
       await _prefs!.remove('SOCKET_SERVER_URL_ANDROID');
     }
-    _socketServerUrlAndroidController.add(value);
+    _socketServerUrlAndroidControllerInstance.add(value);
     debugPrint('SharedPreferencesManager: SOCKET_SERVER_URL_ANDROID updated to $value');
   }
 
@@ -223,7 +273,7 @@ class SharedPreferencesManager {
     } else {
       await _prefs!.remove('SOCKET_SERVER_URL_IOS');
     }
-    _socketServerUrlIosController.add(value);
+    _socketServerUrlIosControllerInstance.add(value);
     debugPrint('SharedPreferencesManager: SOCKET_SERVER_URL_IOS updated to $value');
   }
 
@@ -233,7 +283,7 @@ class SharedPreferencesManager {
     
     _serviceRunning = value;
     await _prefs!.setBool('serviceRunning', value);
-    _serviceRunningController.add(value);
+    _serviceRunningControllerInstance.add(value);
     debugPrint('SharedPreferencesManager: serviceRunning updated to $value');
   }
 
@@ -271,14 +321,26 @@ class SharedPreferencesManager {
 
   /// Dispose all stream controllers
   void dispose() {
-    _isTrackingController.close();
-    _currentOrderIdController.close();
-    _currentRestaurantIdController.close();
-    _currentRestaurantAddressController.close();
-    _currentCustomerAddressController.close();
-    _driverIdController.close();
-    _socketServerUrlAndroidController.close();
-    _socketServerUrlIosController.close();
-    _serviceRunningController.close();
+    _isTrackingController?.close();
+    _currentOrderIdController?.close();
+    _currentRestaurantIdController?.close();
+    _currentRestaurantAddressController?.close();
+    _currentCustomerAddressController?.close();
+    _driverIdController?.close();
+    _socketServerUrlAndroidController?.close();
+    _socketServerUrlIosController?.close();
+    _serviceRunningController?.close();
+    
+    _isTrackingController = null;
+    _currentOrderIdController = null;
+    _currentRestaurantIdController = null;
+    _currentRestaurantAddressController = null;
+    _currentCustomerAddressController = null;
+    _driverIdController = null;
+    _socketServerUrlAndroidController = null;
+    _socketServerUrlIosController = null;
+    _serviceRunningController = null;
+    
+    _isInitialized = false;
   }
 }
