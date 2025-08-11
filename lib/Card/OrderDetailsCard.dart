@@ -73,8 +73,11 @@ class OrderDetailsCard extends StatelessWidget {
           ),
         );
 
-        // Call the callback if provided
+        // Call the callback if provided to trigger UI refresh
         onOrderDelivered?.call();
+        
+        // Force a small delay to ensure SharedPreferences changes propagate
+        await Future.delayed(const Duration(milliseconds: 100));
       }
     } catch (e) {
       debugPrint('Error marking order as delivered: $e');

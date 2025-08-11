@@ -77,11 +77,15 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
           'OrderInProgressPage: currentOrderId changed to $orderId',
         );
         if (orderId != null && orderId.isNotEmpty && _orderId != orderId) {
+          // Clear cache when new order comes in
+          _lastFetchedOrderId = '';
           setState(() {
             _orderId = orderId;
           });
           _fetchOrderDetails(orderId);
         } else if ((orderId == null || orderId.isEmpty) && _hasOrderData) {
+          // Clear cache when order is cleared
+          _lastFetchedOrderId = '';
           setState(() {
             _orderId = '';
             _orderData = {};
@@ -109,9 +113,21 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
   // Cache for order details to prevent unnecessary API calls
   String _lastFetchedOrderId = '';
   
+  // Method to clear fetch cache
+  void _clearFetchCache() {
+    _lastFetchedOrderId = '';
+    debugPrint('OrderInProgressPage: Fetch cache cleared');
+  }
+  
   // Fetch order details from API with caching
   Future<void> _fetchOrderDetails(String orderId) async {
-    if (orderId.isEmpty || orderId == _lastFetchedOrderId) return;
+    if (orderId.isEmpty) return;
+    
+    // Allow refetch if this is a different order or cache was cleared
+    if (orderId == _lastFetchedOrderId) {
+      debugPrint('OrderInProgressPage: Skipping fetch - same order ID and already cached');
+      return;
+    }
 
     setState(() {
       _isLoadingOrder = true;
@@ -781,11 +797,21 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                               OrderDetailsCard(
                                 orderData: _orderData,
                                 onOrderDelivered: () {
+                                  // Clear fetch cache to allow new orders to load immediately
+                                  _clearFetchCache();
+                                  
                                   // Refresh the page after order is delivered
                                   setState(() {
                                     _orderId = "";
                                     _orderData = {};
                                     _hasOrderData = false;
+                                  });
+                                  
+                                  // Force reload order ID after a short delay to catch new orders
+                                  Future.delayed(const Duration(milliseconds: 200), () {
+                                    if (mounted) {
+                                      _loadOrderId();
+                                    }
                                   });
                                 },
                               ),
