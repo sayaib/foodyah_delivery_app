@@ -29,16 +29,21 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _showNewOrderPopup = false;
   final TrackingStatusService _trackingStatusService = TrackingStatusService();
 
-  final List<Widget> _pages = const [
-    OrderInProgressPage(),
-    PayoutPage(),
-    ProfilePage(),
-    SettingsPage(),
-  ];
+  late List<Widget> _pages;
+  
+  void _initializePages() {
+    _pages = [
+      OrderInProgressPage(key: ValueKey('order_page_$_selectedIndex')),
+      const PayoutPage(),
+      const ProfilePage(),
+      const SettingsPage(),
+    ];
+  }
 
   @override
   void initState() {
     super.initState();
+    _initializePages();
     // Start listening for events from the background service as soon as
     // the dashboard is visible.
     _initialize();
@@ -121,11 +126,13 @@ class _DashboardPageState extends State<DashboardPage> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      // Reinitialize pages to force refresh, especially for OrderInProgressPage
+      _initializePages();
     });
     // Refresh tracking status when switching tabs
     _loadTrackingStatus();
     _checkServiceStatus();
-    debugPrint('Dashboard: Tab switched to $index, refreshing status');
+    debugPrint('Dashboard: Tab switched to $index, refreshing status and pages');
 
     // Force refresh the status after a short delay to ensure UI is updated
     Future.delayed(const Duration(milliseconds: 100), () {
