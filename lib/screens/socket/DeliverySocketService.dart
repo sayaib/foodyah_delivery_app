@@ -1,12 +1,13 @@
-
 import 'dart:async';
 import 'package:location/location.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DeliverySocketService {
-  static final DeliverySocketService _instance = DeliverySocketService._internal();
+  static final DeliverySocketService _instance =
+      DeliverySocketService._internal();
 
   factory DeliverySocketService() => _instance;
 
@@ -20,13 +21,17 @@ class DeliverySocketService {
   bool _isOnline = false;
   bool _isDisposed = false;
   String? _partnerId;
+  String? _cachedOrderId; // Cache the current order ID
 
-  final StreamController<String> _statusController = StreamController<String>.broadcast();
+  final StreamController<String> _statusController =
+      StreamController<String>.broadcast();
   Stream<String> get statusStream => _statusController.stream;
 
   void initialize({required String partnerId}) {
     _partnerId = partnerId;
     _isDisposed = false;
+    // Initialize cached order ID asynchronously
+    _updateCachedOrderId();
   }
 
   void goOnline() {
@@ -101,7 +106,9 @@ class DeliverySocketService {
       }
 
       final locationData = await _location.getLocation();
-      _log("📍 Sending location: ${locationData.latitude}, ${locationData.longitude}");
+      _log(
+        "📍 Sending location: ${locationData.latitude}, ${locationData.longitude}",
+      );
 
       _socket?.emit("delivery_response", {
         "partnerId": _partnerId,
@@ -113,9 +120,35 @@ class DeliverySocketService {
 
   void _handleDeliveryRequest(dynamic data) async {
     if (_isDisposed) return;
+
+    // Check if there's already an active order
+    await _updateCachedOrderId();
+
+    if (_cachedOrderId != null && _cachedOrderId!.isNotEmpty) {
+      _log(
+        "🚫 Delivery request rejected - already have active order: $_cachedOrderId",
+      );
+      _log("📦 Rejected order from: ${data['restaurantName'] ?? 'Unknown'}");
+      return; // Don't process the delivery request
+    }
+
     _audioPlayer.play(AssetSource("audio/order.mp3"));
-    _log("📦 Delivery request received: ${data['restaurantName'] ?? 'Unknown'}");
+    _log(
+      "📦 Delivery request received: ${data['restaurantName'] ?? 'Unknown'}",
+    );
     // TODO: Use a callback or notification system to alert the UI
+  }
+
+  // Update cached order ID from SharedPreferences
+  Future<void> _updateCachedOrderId() async {
+    final prefs = await SharedPreferences.getInstance();
+    _cachedOrderId = prefs.getString('currentOrderId');
+  }
+
+  // Method to notify socket service when order is completed
+  Future<void> notifyOrderCompleted() async {
+    await _updateCachedOrderId();
+    _log("📋 Order completion notified - cache updated");
   }
 
   void dispose() {
@@ -141,4 +174,3 @@ class DeliverySocketService {
     print("[DeliverySocketService] $msg");
   }
 }
-

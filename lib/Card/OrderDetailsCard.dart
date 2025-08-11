@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../screens/socket/DeliverySocketService.dart';
 
 class OrderDetailsCard extends StatelessWidget {
   final Map<String, dynamic> orderData;
   final VoidCallback? onOrderDelivered;
 
   const OrderDetailsCard({
-    super.key, 
+    super.key,
     required this.orderData,
     this.onOrderDelivered,
   });
@@ -36,11 +37,15 @@ class OrderDetailsCard extends StatelessWidget {
   Future<void> _handleDelivered(BuildContext context) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('orderId', '');
       await prefs.remove('currentOrderId');
-      await prefs.remove('restaurantId');
-      await prefs.remove('restaurantName');
-      
+      await prefs.remove('currentRestaurantId');
+      await prefs.remove('currentRestaurantAddress');
+      await prefs.remove('currentCustomerAddress');
+
+      // Notify socket service that order is completed
+      final socketService = DeliverySocketService();
+      await socketService.notifyOrderCompleted();
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -49,7 +54,7 @@ class OrderDetailsCard extends StatelessWidget {
             duration: Duration(seconds: 2),
           ),
         );
-        
+
         // Call the callback if provided
         onOrderDelivered?.call();
       }
@@ -78,21 +83,14 @@ class OrderDetailsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
+              Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
               Text(
                 title,
@@ -169,7 +167,7 @@ class OrderDetailsCard extends StatelessWidget {
             colors: [
               Colors.white,
               Colors.orange.withOpacity(0.05),
-              Colors.deepOrange.withOpacity(0.1)
+              Colors.deepOrange.withOpacity(0.1),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -220,26 +218,26 @@ class OrderDetailsCard extends StatelessWidget {
                           Flexible(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Order ID',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              children: [
+                                const Text(
+                                  'Order ID',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  '#$orderId',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              '#$orderId',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            ],
                           ),
-                        ),
                         ],
                       ),
                     ),
@@ -269,7 +267,7 @@ class OrderDetailsCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // Order details section
               Row(
                 children: [
@@ -292,7 +290,7 @@ class OrderDetailsCard extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               // Items section
               Container(
                 padding: const EdgeInsets.all(16),
@@ -444,7 +442,7 @@ class OrderDetailsCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // Addresses section
               Container(
                 padding: const EdgeInsets.all(16),
@@ -461,11 +459,7 @@ class OrderDetailsCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.location_on,
-                          color: Colors.blue,
-                          size: 20,
-                        ),
+                        Icon(Icons.location_on, color: Colors.blue, size: 20),
                         const SizedBox(width: 8),
                         const Text(
                           'Delivery Information',
@@ -478,7 +472,7 @@ class OrderDetailsCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Customer Address
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -495,11 +489,7 @@ class OrderDetailsCard extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Icon(
-                                Icons.home,
-                                color: Colors.green,
-                                size: 16,
-                              ),
+                              Icon(Icons.home, color: Colors.green, size: 16),
                               const SizedBox(width: 6),
                               const Text(
                                 'Customer Address',
@@ -514,16 +504,13 @@ class OrderDetailsCard extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             customerAddress,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.4,
-                            ),
+                            style: const TextStyle(fontSize: 14, height: 1.4),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Restaurant Address
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -540,11 +527,7 @@ class OrderDetailsCard extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Icon(
-                                Icons.store,
-                                color: Colors.orange,
-                                size: 16,
-                              ),
+                              Icon(Icons.store, color: Colors.orange, size: 16),
                               const SizedBox(width: 6),
                               const Text(
                                 'Restaurant Address',
@@ -559,10 +542,7 @@ class OrderDetailsCard extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             restaurantAddress,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.4,
-                            ),
+                            style: const TextStyle(fontSize: 14, height: 1.4),
                           ),
                         ],
                       ),
@@ -571,9 +551,12 @@ class OrderDetailsCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // Delivered button (show for active orders)
-              if (status.toLowerCase() == 'picked up' || status.toLowerCase() == 'pickedup' || status.toLowerCase() == 'placed' || status.toLowerCase() == 'confirmed')
+              if (status.toLowerCase() == 'picked up' ||
+                  status.toLowerCase() == 'pickedup' ||
+                  status.toLowerCase() == 'placed' ||
+                  status.toLowerCase() == 'confirmed')
                 Container(
                   width: double.infinity,
                   height: 56,

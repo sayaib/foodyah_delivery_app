@@ -187,10 +187,20 @@ void onStart(ServiceInstance service) async {
 }
 
 // This function correctly invokes the UI to show a dialog.
-void _handleDeliveryRequest(dynamic data, ServiceInstance service) {
+void _handleDeliveryRequest(dynamic data, ServiceInstance service) async {
   debugPrint(
     "📦 BG_SERVICE: Delivery request received: ${data['restaurantName'] ?? 'Unknown'}",
   );
+
+  // Check if there's already an active order
+  final prefs = await SharedPreferences.getInstance();
+  final existingOrderId = prefs.getString('currentOrderId');
+  
+  if (existingOrderId != null && existingOrderId.isNotEmpty) {
+    debugPrint('🚫 BG_SERVICE: Rejecting delivery request - already have active order: $existingOrderId');
+    debugPrint('📦 BG_SERVICE: Rejected order from: ${data['restaurantName'] ?? 'Unknown'}');
+    return; // Don't invoke the UI dialog
+  }
 
   // This sends a message to the UI thread.
   // We use a key ('showDialog') to identify the event and pass the data.
