@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:io' show Platform;
+import 'shared_preferences_manager.dart';
 
 @pragma('vm:entry-point')
 Future<void> initializeService() async {
@@ -57,7 +58,8 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
+  final prefsManager = SharedPreferencesManager();
+  await prefsManager.initialize();
   final notification = FlutterLocalNotificationsPlugin();
 
   // --- Use a StreamSubscription instead of a Timer ---
@@ -66,9 +68,8 @@ void onStart(ServiceInstance service) async {
   // Get the appropriate socket URL based on platform
   // The URLs should already be set in main.dart with proper HTTPS for production
   final socketUrl = Platform.isAndroid
-      ? prefs.getString('SOCKET_SERVER_URL_ANDROID') ??
-            'https://api.foodyah.com'
-      : prefs.getString('SOCKET_SERVER_URL_IOS') ?? 'https://api.foodyah.com';
+      ? prefsManager.socketServerUrlAndroid ?? 'https://api.foodyah.com'
+      : prefsManager.socketServerUrlIos ?? 'https://api.foodyah.com';
 
   final socket = IO.io(socketUrl, <String, dynamic>{
     'transports': ['websocket'],
@@ -109,8 +110,8 @@ void onStart(ServiceInstance service) async {
     locationSubscription =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
           (Position position) {
-            final driverId = prefs.getString('driverId') ?? 'driver_007';
-            final orderId = prefs.getString('currentOrderId') ?? '';
+            final driverId = prefsManager.driverId ?? 'driver_007';
+            final orderId = prefsManager.currentOrderId ?? '';
 
             if (socket.connected) {
               socket.emit('updateLocation', {
@@ -152,12 +153,12 @@ void onStart(ServiceInstance service) async {
   }
 
   // Check initial tracking status and start stream if needed
-  if (prefs.getBool('isTracking') ?? false) {
+  if (prefsManager.isTracking) {
     startLocationStream();
   }
 
   service.on('startLocationTracking').listen((event) {
-    prefs.setBool('isTracking', true);
+    prefsManager.setIsTracking(true);
     startLocationStream(); // Start the stream
     debugPrint("📍 BG_SERVICE: Start location tracking command received.");
 
@@ -165,19 +166,19 @@ void onStart(ServiceInstance service) async {
     if (event != null && event['orderId'] != null) {
       debugPrint("📦 BG_SERVICE: Tracking for order: ${event['orderId']}");
       // You could store the current order ID if needed
-      prefs.setString('currentOrderId', event['orderId']);
+      prefsManager.setCurrentOrderId(event['orderId']);
     }
   });
 
   service.on('stopLocationTracking').listen((event) {
-    prefs.setBool('isTracking', false);
+    prefsManager.setIsTracking(false);
     locationSubscription?.cancel(); // Stop the stream
     locationSubscription = null;
     debugPrint("🛑 BG_SERVICE: Stop location tracking command received.");
   });
 
   service.on('stopService').listen((event) async {
-    await prefs.setBool('isTracking', false);
+    await prefsManager.setIsTracking(false);
     locationSubscription?.cancel(); // Stop the stream
     locationSubscription = null;
     socket.disconnect();
@@ -193,8 +194,9 @@ void _handleDeliveryRequest(dynamic data, ServiceInstance service) async {
   );
 
   // Check if there's already an active order
-  final prefs = await SharedPreferences.getInstance();
-  final existingOrderId = prefs.getString('currentOrderId');
+  final prefsManager = SharedPreferencesManager();
+  await prefsManager.initialize();
+  final existingOrderId = prefsManager.currentOrderId;
   
   if (existingOrderId != null && existingOrderId.isNotEmpty) {
     debugPrint('🚫 BG_SERVICE: Rejecting delivery request - already have active order: $existingOrderId');

@@ -9,6 +9,7 @@ import 'ProfilePage.dart';
 import '../SettingsPage.dart';
 import '../services/location_permission_service.dart';
 import '../services/tracking_status_service.dart';
+import '../services/shared_preferences_manager.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -28,6 +29,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic> _orderData = {};
   bool _showNewOrderPopup = false;
   final TrackingStatusService _trackingStatusService = TrackingStatusService();
+  final SharedPreferencesManager _prefsManager = SharedPreferencesManager();
 
   late List<Widget> _pages;
   
@@ -80,8 +82,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _forceRefreshTrackingStatus() async {
     // This ensures the UI shows the correct tracking status when the app is reopened
-    final prefs = await SharedPreferences.getInstance();
-    final status = prefs.getBool('isTracking') ?? false;
+    final status = _prefsManager.isTracking;
 
     // Update both local state and service
     if (mounted) {
@@ -149,8 +150,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _loadTrackingStatus() async {
     if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-    final status = prefs.getBool('isTracking') ?? false;
+    final status = _prefsManager.isTracking;
     setState(() {
       isTracking = status;
       debugPrint('Dashboard: isTracking updated to $isTracking');
@@ -230,14 +230,13 @@ class _DashboardPageState extends State<DashboardPage> {
 
         debugPrint("Location permission granted, starting service...");
         // If permission is granted, proceed to start the service and tracking
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isTracking', true);
+        await _prefsManager.setIsTracking(true);
 
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(true);
 
         // Save driver ID to shared preferences for background service
-        await prefs.setString('driverId', _driverId);
+        await _prefsManager.setDriverId(_driverId);
 
         if (!serviceRunning) {
           debugPrint("Starting background service...");
@@ -252,8 +251,7 @@ class _DashboardPageState extends State<DashboardPage> {
         setState(() => isTracking = true);
       } else {
         // If turning OFF, stop both location tracking and background service
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isTracking', false);
+        await _prefsManager.setIsTracking(false);
 
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(false);
@@ -289,38 +287,20 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _acceptOrder() async {
-    // Save the order data if needed
-    final prefs = await SharedPreferences.getInstance();
-
-    // Store order information in SharedPreferences for persistence
-    if (_orderData['orderId'] != null) {
-      await prefs.setString('currentOrderId', _orderData['orderId']);
-    }
-    if (_orderData['restaurantName'] != null) {
-      await prefs.setString(
-        'currentRestaurantName',
-        _orderData['restaurantName'],
-      );
-    }
-    if (_orderData['restaurantAddress'] != null) {
-      await prefs.setString(
-        'currentRestaurantAddress',
-        _orderData['restaurantAddress'],
-      );
-    }
-    if (_orderData['customerAddress'] != null) {
-      await prefs.setString(
-        'currentCustomerAddress',
-        _orderData['customerAddress'],
-      );
-    }
+    // Store order information using global state manager
+    await _prefsManager.setOrderData(
+      orderId: _orderData['orderId'],
+      restaurantId: _orderData['restaurantName'], // Note: using restaurantName as restaurantId for compatibility
+      restaurantAddress: _orderData['restaurantAddress'],
+      customerAddress: _orderData['customerAddress'],
+    );
 
     // Start location tracking if not already started
     if (!isTracking) {
       _toggleTracking(true);
     } else {
       // If tracking is already on, just make sure driver ID is set
-      await prefs.setString('driverId', _driverId);
+      await _prefsManager.setDriverId(_driverId);
     }
 
     // Signal background to start emitting location with driver ID and order info

@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'services/location_permission_service.dart';
 import 'services/background_service.dart';
 import 'services/tracking_status_service.dart';
+import 'services/shared_preferences_manager.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -21,6 +22,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isCheckingPermission = false;
   final FlutterBackgroundService _service = FlutterBackgroundService();
   final TrackingStatusService _trackingStatusService = TrackingStatusService();
+  final SharedPreferencesManager _prefsManager = SharedPreferencesManager();
 
   @override
   void initState() {
@@ -81,8 +83,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadTrackingStatus() async {
     if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-    final status = prefs.getBool('isTracking') ?? false;
+    final status = _prefsManager.isTracking;
     setState(() {
       isTracking = status;
       debugPrint('SettingsPage: isTracking updated to $isTracking');
@@ -125,8 +126,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
         debugPrint("Location permission granted, starting service...");
         // If permission is granted, proceed to start the service and tracking
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isTracking', true);
+        await _prefsManager.setIsTracking(true);
 
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(true);
@@ -146,8 +146,7 @@ class _SettingsPageState extends State<SettingsPage> {
         setState(() => isTracking = true);
       } else {
         // If turning OFF, no permission needed. Just stop.
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isTracking', false);
+        await _prefsManager.setIsTracking(false);
 
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(false);
@@ -181,8 +180,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     // Update preferences and UI state
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isTracking', false);
+    await _prefsManager.setIsTracking(false);
 
     setState(() {
       serviceRunning = false;

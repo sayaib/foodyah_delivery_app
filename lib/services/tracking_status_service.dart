@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'shared_preferences_manager.dart';
 
 /// A service to manage tracking status across the app
 /// This provides a centralized way to update and listen to tracking status changes
@@ -22,14 +23,14 @@ class TrackingStatusService {
   // Current status
   bool _isTracking = false;
   bool _isServiceRunning = false;
+  final SharedPreferencesManager _prefsManager = SharedPreferencesManager();
 
   bool get isTracking => _isTracking;
   bool get isServiceRunning => _isServiceRunning;
 
   // Initialize the service
   Future<void> initialize() async {
-    final prefs = await SharedPreferences.getInstance();
-    _isTracking = prefs.getBool('isTracking') ?? false;
+    _isTracking = _prefsManager.isTracking;
     // Emit initial value
     _trackingStatusController.add(_isTracking);
   }
@@ -37,8 +38,7 @@ class TrackingStatusService {
   // Update tracking status
   Future<void> updateTrackingStatus(bool isTracking) async {
     _isTracking = isTracking;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isTracking', isTracking);
+    await _prefsManager.setIsTracking(isTracking);
     _trackingStatusController.add(isTracking);
   }
 

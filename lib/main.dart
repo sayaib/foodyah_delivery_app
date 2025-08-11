@@ -20,6 +20,7 @@ import 'package:foodyah_delivery_app/screens/Landing_page.dart';
 import 'SettingsPage.dart'; // Assuming it's moved to /screens//
 import 'services/background_service.dart';
 import 'services/tracking_status_service.dart';
+import 'services/shared_preferences_manager.dart';
 
 
 
@@ -27,8 +28,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env"); // Load once in main isolate
 
-  // ✅ Save socket URL for background isolate
-  final prefs = await SharedPreferences.getInstance();
+  // Initialize SharedPreferencesManager
+  final prefsManager = SharedPreferencesManager();
+  await prefsManager.initialize();
   
   // Set Android-specific URL - use HTTPS for production, HTTP only for local development
   final isDebug = kDebugMode;
@@ -36,16 +38,17 @@ Future<void> main() async {
       ? (dotenv.env['SOCKET_SERVER_URL_ANDROID'] ?? 'http://10.0.2.2:5050')
       : (dotenv.env['SOCKET_SERVER_URL_ANDROID_PROD'] ?? 'https://api.foodyah.com');
   
-  await prefs.setString('SOCKET_SERVER_URL_ANDROID', androidSocketUrl);
+  await prefsManager.setSocketServerUrlAndroid(androidSocketUrl);
   
   // Set iOS-specific URL - use HTTPS for production, HTTP only for local development
   final iosSocketUrl = isDebug
       ? (dotenv.env['SOCKET_SERVER_URL_IOS'] ?? 'http://localhost:5050')
       : (dotenv.env['SOCKET_SERVER_URL_IOS_PROD'] ?? 'https://api.foodyah.com');
       
-  await prefs.setString('SOCKET_SERVER_URL_IOS', iosSocketUrl);
+  await prefsManager.setSocketServerUrlIos(iosSocketUrl);
   
-  // Set generic SOCKET_SERVER_URL based on platform
+  // ✅ Save socket URL for background isolate (legacy support)
+  final prefs = await SharedPreferences.getInstance();
   await prefs.setString(
     'SOCKET_SERVER_URL',
     Platform.isAndroid ? androidSocketUrl : iosSocketUrl,
@@ -74,6 +77,7 @@ class FoodyaApp extends StatefulWidget {
 class _FoodyaAppState extends State<FoodyaApp> with WidgetsBindingObserver {
   final FlutterBackgroundService _service = FlutterBackgroundService();
   final TrackingStatusService _trackingStatusService = TrackingStatusService();
+  final SharedPreferencesManager _prefsManager = SharedPreferencesManager();
   
   @override
   void initState() {
@@ -84,12 +88,11 @@ class _FoodyaAppState extends State<FoodyaApp> with WidgetsBindingObserver {
   
   Future<void> _checkAndResetTrackingStatus() async {
     // When app starts, check if we need to reset tracking status
-    final prefs = await SharedPreferences.getInstance();
-    final wasTracking = prefs.getBool('isTracking') ?? false;
+    final wasTracking = _prefsManager.isTracking;
     
     if (wasTracking) {
       // If tracking was on when app was closed, reset it to off
-      await prefs.setBool('isTracking', false);
+      await _prefsManager.setIsTracking(false);
       await _trackingStatusService.updateTrackingStatus(false);
       debugPrint('App restarted: Reset tracking status to offline');
     }
@@ -112,9 +115,8 @@ class _FoodyaAppState extends State<FoodyaApp> with WidgetsBindingObserver {
   }
 
   Future<void> _setOfflineStatus() async {
-    // Set tracking status to false in SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isTracking', false);
+    // Set tracking status to false using global state manager
+    await _prefsManager.setIsTracking(false);
     
     // Update tracking status service
     await _trackingStatusService.updateTrackingStatus(false);

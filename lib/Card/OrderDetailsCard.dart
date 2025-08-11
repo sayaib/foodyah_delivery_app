@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/socket/DeliverySocketService.dart';
+import '../services/shared_preferences_manager.dart';
 
 class OrderDetailsCard extends StatelessWidget {
   final Map<String, dynamic> orderData;
@@ -36,11 +37,8 @@ class OrderDetailsCard extends StatelessWidget {
   // Method to handle delivered button press
   Future<void> _handleDelivered(BuildContext context) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('currentOrderId');
-      await prefs.remove('currentRestaurantId');
-      await prefs.remove('currentRestaurantAddress');
-      await prefs.remove('currentCustomerAddress');
+      final prefsManager = SharedPreferencesManager();
+      await prefsManager.clearOrderData();
 
       // Notify socket service that order is completed
       final socketService = DeliverySocketService();

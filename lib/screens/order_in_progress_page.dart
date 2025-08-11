@@ -10,6 +10,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:foodyah_delivery_app/services/location_permission_service.dart';
 import 'package:foodyah_delivery_app/services/tracking_status_service.dart';
 import 'package:foodyah_delivery_app/services/api_client.dart';
+import 'package:foodyah_delivery_app/services/shared_preferences_manager.dart';
 import 'package:foodyah_delivery_app/Card/OrderDetailsCard.dart';
 
 class OrderInProgressPage extends StatefulWidget {
@@ -28,6 +29,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
   bool _hasOrderData = false;
   Map<String, dynamic> _orderData = {};
   final FlutterBackgroundService _service = FlutterBackgroundService();
+  final SharedPreferencesManager _prefsManager = SharedPreferencesManager();
   final _storage = const FlutterSecureStorage();
   String _driverId = "";
   String _orderId = "";
@@ -71,8 +73,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
 
   // Load order ID from SharedPreferences
   Future<void> _loadOrderId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final orderId = prefs.getString('currentOrderId');
+    final orderId = _prefsManager.currentOrderId;
 
     if (orderId != null && orderId.isNotEmpty) {
       setState(() {
@@ -160,8 +161,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
 
   Future<void> _forceRefreshTrackingStatus() async {
     // This ensures the UI shows the correct tracking status when the app is reopened
-    final prefs = await SharedPreferences.getInstance();
-    final status = prefs.getBool('isTracking') ?? false;
+    final status = _prefsManager.isTracking;
 
     // Update both local state and service
     if (mounted) {
@@ -227,8 +227,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
 
   Future<void> _loadTrackingStatus() async {
     if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-    final status = prefs.getBool('isTracking') ?? false;
+    final status = _prefsManager.isTracking;
     setState(() {
       isTracking = status;
       debugPrint('OrderInProgressPage: isTracking updated to $isTracking');
@@ -291,14 +290,13 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
 
         debugPrint("Location permission granted, starting service...");
         // If permission is granted, proceed to start the service and tracking
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isTracking', true);
+        await _prefsManager.setIsTracking(true);
 
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(true);
 
         // Save driver ID to shared preferences for background service
-        await prefs.setString('driverId', _driverId);
+        await _prefsManager.setDriverId(_driverId);
 
         if (!serviceRunning) {
           debugPrint("Starting background service...");
@@ -315,8 +313,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
         setState(() => isTracking = true);
       } else {
         // If turning OFF, no permission needed. Just stop.
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isTracking', false);
+        await _prefsManager.setIsTracking(false);
 
         // Update tracking status service
         await _trackingStatusService.updateTrackingStatus(false);
@@ -357,8 +354,7 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
     }
 
     // Update preferences and UI state
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isTracking', false);
+    await _prefsManager.setIsTracking(false);
 
     setState(() {
       serviceRunning = false;
@@ -385,41 +381,22 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
   }
 
   void _acceptOrder() async {
-    // Save the order data if needed
-    final prefs = await SharedPreferences.getInstance();
-
-    // Store order information in SharedPreferences for persistence
-    // Make sure we're using the correct fields from the order data
+    // Store order information using global state manager
     final orderData = _orderData;
     
-    if (orderData['_id'] != null) {
-      await prefs.setString('currentOrderId', orderData['_id']);
-    }
-    if (orderData['restaurantId'] != null) {
-      await prefs.setString(
-        'currentRestaurantId',
-        orderData['restaurantId'],
-      );
-    }
-    if (orderData['restaurantFullAddress'] != null) {
-      await prefs.setString(
-        'currentRestaurantAddress',
-        orderData['restaurantFullAddress'],
-      );
-    }
-    if (orderData['userFullAddress'] != null) {
-      await prefs.setString(
-        'currentCustomerAddress',
-        orderData['userFullAddress'],
-      );
-    }
+    await _prefsManager.setOrderData(
+      orderId: orderData['_id'],
+      restaurantId: orderData['restaurantId'],
+      restaurantAddress: orderData['restaurantFullAddress'],
+      customerAddress: orderData['userFullAddress'],
+    );
 
     // Start location tracking if not already started
     if (!isTracking) {
       _toggleTracking(true);
     } else {
       // If tracking is already on, just make sure driver ID is set
-      await prefs.setString('driverId', _driverId);
+      await _prefsManager.setDriverId(_driverId);
     }
 
     // Signal background to start emitting location with driver ID and order info

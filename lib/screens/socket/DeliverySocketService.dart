@@ -4,6 +4,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/shared_preferences_manager.dart';
 
 class DeliverySocketService {
   static final DeliverySocketService _instance =
@@ -22,6 +23,7 @@ class DeliverySocketService {
   bool _isDisposed = false;
   String? _partnerId;
   String? _cachedOrderId; // Cache the current order ID
+  final SharedPreferencesManager _prefsManager = SharedPreferencesManager();
 
   final StreamController<String> _statusController =
       StreamController<String>.broadcast();
@@ -141,8 +143,7 @@ class DeliverySocketService {
 
   // Update cached order ID from SharedPreferences
   Future<void> _updateCachedOrderId() async {
-    final prefs = await SharedPreferences.getInstance();
-    _cachedOrderId = prefs.getString('currentOrderId');
+    _cachedOrderId = _prefsManager.currentOrderId;
   }
 
   // Method to notify socket service when order is completed
