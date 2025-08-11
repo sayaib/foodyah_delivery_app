@@ -772,7 +772,17 @@ class _OrderInProgressPageState extends State<OrderInProgressPage> {
                                   ],
                                 ),
                               ),
-                              OrderDetailsCard(orderData: _orderData),
+                              OrderDetailsCard(
+                                orderData: _orderData,
+                                onOrderDelivered: () {
+                                  // Refresh the page after order is delivered
+                                  setState(() {
+                                    _orderId = "";
+                                    _orderData = {};
+                                    _hasOrderData = false;
+                                  });
+                                },
+                              ),
                               const SizedBox(height: 16),
                               if (_orderData.containsKey('userFullAddress') &&
                                   _orderData['userFullAddress'] != null)
