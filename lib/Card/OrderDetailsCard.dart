@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/shared_preferences_manager.dart';
+import '../services/api_client.dart';
 
 class OrderDetailsCard extends StatelessWidget {
   final Map<String, dynamic> orderData;
@@ -50,6 +51,14 @@ class OrderDetailsCard extends StatelessWidget {
 
   // Method to handle delivered button press
   Future<void> _handleDelivered(BuildContext context) async {
+    // Show OTP verification dialog first
+    final otpVerified = await _showOtpVerificationDialog(context);
+
+    if (!otpVerified) {
+      debugPrint('📋 OTP verification failed or cancelled');
+      return;
+    }
+
     try {
       final prefsManager = SharedPreferencesManager();
       await prefsManager.initialize();
@@ -75,7 +84,7 @@ class OrderDetailsCard extends StatelessWidget {
 
         // Call the callback if provided to trigger UI refresh
         onOrderDelivered?.call();
-        
+
         // Force a small delay to ensure SharedPreferences changes propagate
         await Future.delayed(const Duration(milliseconds: 100));
       }
@@ -89,6 +98,191 @@ class OrderDetailsCard extends StatelessWidget {
           ),
         );
       }
+    }
+  }
+
+  // Method to show OTP verification dialog
+  Future<bool> _showOtpVerificationDialog(BuildContext context) async {
+    final TextEditingController otpController = TextEditingController();
+    bool isLoading = false;
+
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return StatefulBuilder(
+              builder: (context, setState) {
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: Row(
+                    children: [
+                      Icon(Icons.security, color: Colors.orange, size: 24),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Delivery Verification',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Please enter the 4-digit OTP provided by the customer to confirm delivery:',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: otpController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 8,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: '0000',
+                          counterText: '',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.orange,
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                        ),
+                        enabled: !isLoading,
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              Navigator.of(dialogContext).pop(false);
+                            },
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              final otp = otpController.text.trim();
+                              if (otp.length != 4) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Please enter a valid 4-digit OTP',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setState(() {
+                                isLoading = true;
+                              });
+
+                              try {
+                                final verified = await _verifyOtpWithBackend(
+                                  otp,
+                                );
+                                if (verified) {
+                                  Navigator.of(dialogContext).pop(true);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Invalid OTP. Please try again.',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Verification failed: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              } finally {
+                                setState(() {
+                                  isLoading = false;
+                                });
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Text('Verify'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ) ??
+        false;
+  }
+
+  // Method to verify OTP with backend API
+  Future<bool> _verifyOtpWithBackend(String otp) async {
+    try {
+      final currentOrderId = _orderId; // Use the cached order ID getter
+
+      debugPrint('📋 Verifying OTP: $otp for order: $currentOrderId');
+
+      final response = await ApiClient.post('/delivery/verify-otp', {
+        'orderId': currentOrderId,
+        'otp': otp,
+      });
+
+      debugPrint('📋 OTP verification response: $response');
+
+      // Check if the response contains success: true
+      if (response is Map<String, dynamic>) {
+        return response['success'] == true;
+      }
+      
+      return false;
+    } catch (e) {
+      debugPrint('📋 OTP verification error: $e');
+      return false;
     }
   }
 
