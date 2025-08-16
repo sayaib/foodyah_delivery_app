@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/shared_preferences_manager.dart';
 import '../services/api_client.dart';
+import '../theme/app_theme.dart';
 
 class OrderDetailsCard extends StatelessWidget {
   final Map<String, dynamic> orderData;
@@ -30,23 +31,9 @@ class OrderDetailsCard extends StatelessWidget {
   double get _totalAmount => (orderData['totalAmount'] ?? 0).toDouble();
   List<dynamic> get _items => orderData['items'] ?? [];
 
-  // Helper method to get color based on order status
+  // Helper method to get color based on order status using app theme
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'preparing':
-        return Colors.orange;
-      case 'ready':
-        return Colors.blue;
-      case 'picked up':
-      case 'pickedup':
-        return Colors.purple;
-      case 'delivered':
-        return Colors.green;
-      case 'cancelled':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
+    return StatusColors.getStatusColor(status);
   }
 
   // Method to handle delivered button press
@@ -278,7 +265,7 @@ class OrderDetailsCard extends StatelessWidget {
       if (response is Map<String, dynamic>) {
         return response['success'] == true;
       }
-      
+
       return false;
     } catch (e) {
       debugPrint('📋 OTP verification error: $e');
@@ -286,7 +273,7 @@ class OrderDetailsCard extends StatelessWidget {
     }
   }
 
-  // Optimized helper method to build info cards with const widgets where possible
+  // Optimized helper method to build info cards with app theme styling
   Widget _buildInfoCard({
     required IconData icon,
     required String title,
@@ -294,27 +281,40 @@ class OrderDetailsCard extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppTheme.spacingL),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // Optimize layout
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisSize: MainAxisSize.min, // Optimize layout
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(AppTheme.spacingS),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusS),
+                ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+              const SizedBox(width: AppTheme.spacingM),
               Flexible(
                 child: Text(
                   title,
-                  style: TextStyle(
+                  style: AppTheme.labelSmall.copyWith(
                     color: color,
-                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -322,13 +322,12 @@ class OrderDetailsCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spacingM),
           Text(
             value,
-            style: TextStyle(
-              color: color.withOpacity(0.8),
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+            style: AppTheme.bodyMedium.copyWith(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -379,48 +378,41 @@ class OrderDetailsCard extends StatelessWidget {
     );
 
     return Card(
-      elevation: 8,
-      margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: AppTheme.elevationL,
+      margin: const EdgeInsets.symmetric(
+        vertical: AppTheme.spacingM,
+        horizontal: AppTheme.spacingM,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+      ),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              Colors.orange.withOpacity(0.05),
-              Colors.deepOrange.withOpacity(0.1),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+          color: AppTheme.surfaceColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 16,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(AppTheme.spacingXL),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header with order ID and status
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppTheme.spacingL),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.deepOrange, Colors.orange],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppTheme.primaryColor,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusL),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.deepOrange.withOpacity(0.3),
-                      blurRadius: 8,
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -431,30 +423,39 @@ class OrderDetailsCard extends StatelessWidget {
                     Expanded(
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.receipt_long,
-                            color: Colors.white,
-                            size: 24,
+                          Container(
+                            padding: const EdgeInsets.all(AppTheme.spacingS),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusS,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.receipt_long,
+                              color: AppTheme.textOnPrimary,
+                              size: 20,
+                            ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppTheme.spacingM),
                           Flexible(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Order ID',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                                  style: AppTheme.labelSmall.copyWith(
+                                    color: AppTheme.textOnPrimary.withOpacity(
+                                      0.8,
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(height: AppTheme.spacingXS),
                                 Text(
                                   '#$orderId',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                  style: AppTheme.bodyLarge.copyWith(
+                                    color: AppTheme.textOnPrimary,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ],
@@ -465,12 +466,14 @@ class OrderDetailsCard extends StatelessWidget {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        horizontal: AppTheme.spacingM,
+                        vertical: AppTheme.spacingS,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusCircular,
+                        ),
                         border: Border.all(
                           color: Colors.white.withOpacity(0.3),
                           width: 1,
@@ -478,49 +481,50 @@ class OrderDetailsCard extends StatelessWidget {
                       ),
                       child: Text(
                         status.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                        style: AppTheme.labelSmall.copyWith(
+                          color: AppTheme.textOnPrimary,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.spacingXL),
 
               // Order details section
               Row(
                 children: [
                   Expanded(
                     child: _buildInfoCard(
-                      icon: Icons.access_time,
+                      icon: Icons.access_time_rounded,
                       title: 'Order Time',
                       value: formattedDate,
-                      color: Colors.blue,
+                      color: AppTheme.infoColor,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppTheme.spacingM),
                   Expanded(
                     child: _buildInfoCard(
-                      icon: Icons.currency_rupee,
+                      icon: Icons.currency_rupee_rounded,
                       title: 'Total Amount',
                       value: '₹$total',
-                      color: Colors.green,
+                      color: AppTheme.successColor,
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: AppTheme.spacingXL),
 
               // Items section
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppTheme.spacingL),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppTheme.secondaryColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusL),
                   border: Border.all(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: AppTheme.secondaryColor.withOpacity(0.2),
                     width: 1,
                   ),
                 ),
@@ -529,67 +533,75 @@ class OrderDetailsCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.restaurant_menu,
-                          color: Colors.deepOrange,
-                          size: 20,
+                        Container(
+                          padding: const EdgeInsets.all(AppTheme.spacingS),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusS,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.restaurant_menu_rounded,
+                            color: AppTheme.secondaryColor,
+                            size: 16,
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        const Text(
+                        const SizedBox(width: AppTheme.spacingM),
+                        Text(
                           'Order Items',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                          style: AppTheme.headingSmall.copyWith(
+                            color: AppTheme.secondaryColor,
                             fontSize: 16,
-                            color: Colors.deepOrange,
                           ),
                         ),
                         const Spacer(),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: AppTheme.spacingM,
+                            vertical: AppTheme.spacingS,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            color: AppTheme.secondaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusM,
+                            ),
                           ),
                           child: Text(
                             '${items.length} items',
-                            style: const TextStyle(
-                              color: Colors.deepOrange,
-                              fontSize: 12,
+                            style: AppTheme.labelSmall.copyWith(
+                              color: AppTheme.secondaryColor,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spacingM),
                     if (items.isEmpty)
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppTheme.spacingL),
                         decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppTheme.textHint.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusM),
                           border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: AppTheme.dividerColor,
                             width: 1,
                           ),
                         ),
                         child: Row(
                           children: [
                             Icon(
-                              Icons.info_outline,
-                              color: Colors.grey[600],
+                              Icons.info_outline_rounded,
+                              color: AppTheme.textHint,
                               size: 20,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppTheme.spacingM),
                             Text(
                               "No items found",
-                              style: TextStyle(
-                                fontSize: 14,
+                              style: AppTheme.bodyMedium.copyWith(
                                 fontStyle: FontStyle.italic,
-                                color: Colors.grey[600],
+                                color: AppTheme.textHint,
                               ),
                             ),
                           ],
@@ -605,54 +617,47 @@ class OrderDetailsCard extends StatelessWidget {
                             : 'Unknown Item';
 
                         return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.grey.withOpacity(0.2),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                          margin: const EdgeInsets.only(
+                            bottom: AppTheme.spacingS,
                           ),
+                          padding: const EdgeInsets.all(AppTheme.spacingM),
+                          decoration: AppTheme.cardDecoration,
                           child: Row(
                             children: [
                               Container(
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [Colors.deepOrange, Colors.orange],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
+                                  color: AppTheme.secondaryColor,
+                                  borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusM,
                                   ),
-                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.secondaryColor
+                                          .withOpacity(0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Center(
                                   child: Text(
                                     quantity,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      fontSize: 16,
+                                    style: AppTheme.bodyMedium.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.textOnPrimary,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: AppTheme.spacingM),
                               Expanded(
                                 child: Text(
                                   name,
-                                  style: const TextStyle(
+                                  style: AppTheme.bodyMedium.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 15,
+                                    color: AppTheme.textPrimary,
                                   ),
                                 ),
                               ),
@@ -663,16 +668,14 @@ class OrderDetailsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-
               // Addresses section
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppTheme.spacingL),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppTheme.infoColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusL),
                   border: Border.all(
-                    color: Colors.blue.withOpacity(0.2),
+                    color: AppTheme.infoColor.withOpacity(0.2),
                     width: 1,
                   ),
                 ),
@@ -681,90 +684,124 @@ class OrderDetailsCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.location_on, color: Colors.blue, size: 20),
-                        const SizedBox(width: 8),
-                        const Text(
+                        Container(
+                          padding: const EdgeInsets.all(AppTheme.spacingS),
+                          decoration: BoxDecoration(
+                            color: AppTheme.infoColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusS,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.location_on_rounded,
+                            color: AppTheme.infoColor,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: AppTheme.spacingM),
+                        Text(
                           'Delivery Information',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                          style: AppTheme.headingSmall.copyWith(
+                            color: AppTheme.infoColor,
                             fontSize: 16,
-                            color: Colors.blue,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppTheme.spacingL),
 
                     // Customer Address
                     Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
+                      padding: const EdgeInsets.all(AppTheme.spacingM),
+                      decoration: AppTheme.cardDecoration,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.home, color: Colors.green, size: 16),
-                              const SizedBox(width: 6),
-                              const Text(
+                              Container(
+                                padding: const EdgeInsets.all(
+                                  AppTheme.spacingXS,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.successColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusS,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.home_rounded,
+                                  color: AppTheme.successColor,
+                                  size: 14,
+                                ),
+                              ),
+                              const SizedBox(width: AppTheme.spacingS),
+                              Text(
                                 'Customer Address',
-                                style: TextStyle(
+                                style: AppTheme.labelSmall.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: Colors.green,
+                                  color: AppTheme.successColor,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppTheme.spacingS),
                           Text(
                             customerAddress,
-                            style: const TextStyle(fontSize: 14, height: 1.4),
+                            style: AppTheme.bodyMedium.copyWith(
+                              height: 1.4,
+                              color: AppTheme.textPrimary,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spacingM),
 
                     // Restaurant Address
                     Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
+                      padding: const EdgeInsets.all(AppTheme.spacingM),
+                      decoration: AppTheme.cardDecoration,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.store, color: Colors.orange, size: 16),
-                              const SizedBox(width: 6),
-                              const Text(
+                              Container(
+                                padding: const EdgeInsets.all(
+                                  AppTheme.spacingXS,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.secondaryColor.withOpacity(
+                                    0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusS,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.store_rounded,
+                                  color: AppTheme.secondaryColor,
+                                  size: 14,
+                                ),
+                              ),
+                              const SizedBox(width: AppTheme.spacingS),
+                              Text(
                                 'Restaurant Address',
-                                style: TextStyle(
+                                style: AppTheme.labelSmall.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: Colors.orange,
+                                  color: AppTheme.secondaryColor,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppTheme.spacingS),
                           Text(
                             restaurantAddress,
-                            style: const TextStyle(fontSize: 14, height: 1.4),
+                            style: AppTheme.bodyMedium.copyWith(
+                              height: 1.4,
+                              color: AppTheme.textPrimary,
+                            ),
                           ),
                         ],
                       ),
@@ -772,7 +809,7 @@ class OrderDetailsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.spacingXL),
 
               // Delivered button (show for active orders)
               if (status.toLowerCase() == 'picked up' ||
@@ -783,16 +820,12 @@ class OrderDetailsCard extends StatelessWidget {
                   width: double.infinity,
                   height: 56,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.green, Colors.green.shade600],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
+                    color: AppTheme.successColor,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusL),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.3),
-                        blurRadius: 8,
+                        color: AppTheme.successColor.withOpacity(0.3),
+                        blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -803,24 +836,23 @@ class OrderDetailsCard extends StatelessWidget {
                       backgroundColor: Colors.transparent,
                       shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusL),
                       ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
-                          Icons.check_circle,
-                          color: Colors.white,
+                          Icons.check_circle_rounded,
+                          color: AppTheme.textOnPrimary,
                           size: 24,
                         ),
-                        const SizedBox(width: 8),
-                        const Text(
+                        const SizedBox(width: AppTheme.spacingM),
+                        Text(
                           'Mark as Delivered',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                          style: AppTheme.bodyLarge.copyWith(
+                            color: AppTheme.textOnPrimary,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
