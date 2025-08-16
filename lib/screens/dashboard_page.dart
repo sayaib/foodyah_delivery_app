@@ -344,35 +344,43 @@ class _DashboardPageState extends State<DashboardPage> {
           appBar: AppBar(
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: AppTheme.textOnPrimary,
-            elevation: 4,
-
+            elevation: 0,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(0)),
+              ),
+            ),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(0)),
             ),
             title: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(AppTheme.spacingS),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                  ),
                   child: Image.asset(
                     'assets/images/logo.png',
-                    height: 32,
+                    height: 28,
                     // If the logo image doesn't exist, use an icon instead
                     errorBuilder: (context, error, stackTrace) => const Icon(
                       Icons.delivery_dining,
                       color: Colors.white,
-                      size: 30,
+                      size: 28,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spacingM),
                 Flexible(
                   child: Text(
                     'Foodyah Delivery',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                    style: AppTheme.headingSmall.copyWith(
+                      color: AppTheme.textOnPrimary,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
-                      color: Colors.white,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -382,68 +390,66 @@ class _DashboardPageState extends State<DashboardPage> {
             actions: [
               // Location tracking toggle switch with improved design
               Container(
-                margin: const EdgeInsets.only(right: 16, bottom: 10),
+                margin: const EdgeInsets.only(
+                  right: AppTheme.spacingM,
+                  bottom: AppTheme.spacingS,
+                ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                  horizontal: AppTheme.spacingM,
+                  vertical: AppTheme.spacingS,
                 ),
                 decoration: BoxDecoration(
                   color: isTracking
-                      ? const Color.fromARGB(
-                          255,
-                          110,
-                          245,
-                          115,
-                        ).withOpacity(0.2)
-                      : const Color.fromARGB(
-                          255,
-                          213,
-                          213,
-                          213,
-                        ).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+                      ? AppTheme.successColor.withOpacity(0.2)
+                      : Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusCircular),
                   border: Border.all(
                     color: isTracking
-                        ? Colors.green
-                        : const Color.fromARGB(255, 230, 230, 230),
-                    width: 1,
+                        ? AppTheme.successColor
+                        : Colors.white.withOpacity(0.5),
+                    width: 1.5,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Flexible(
-                      child: Text(
-                        isTracking ? 'Online' : 'Offline',
-                        style: TextStyle(
-                          color: isTracking
-                              ? Colors.green
-                              : const Color.fromARGB(255, 235, 235, 235),
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    Icon(
+                      isTracking
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: isTracking
+                          ? AppTheme.successColor
+                          : Colors.white.withOpacity(0.8),
+                      size: 16,
+                    ),
+                    const SizedBox(width: AppTheme.spacingS),
+                    Text(
+                      isTracking ? 'Online' : 'Offline',
+                      style: AppTheme.labelMedium.copyWith(
+                        color: isTracking
+                            ? AppTheme.successColor
+                            : Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppTheme.spacingS),
                     Switch(
                       value: isTracking,
                       onChanged: _isCheckingPermission
                           ? null
                           : (value) => _toggleTracking(value),
-                      activeColor: Colors.green,
-                      activeTrackColor: Colors.green.withOpacity(0.5),
-                      inactiveThumbColor: const Color.fromARGB(
-                        255,
-                        232,
-                        232,
-                        232,
-                      ),
-                      inactiveTrackColor: const Color.fromARGB(
-                        255,
-                        226,
-                        225,
-                        225,
-                      ).withOpacity(0.5),
+                      activeColor: AppTheme.successColor,
+                      activeTrackColor: AppTheme.successColor.withOpacity(0.3),
+                      inactiveThumbColor: Colors.white.withOpacity(0.8),
+                      inactiveTrackColor: Colors.white.withOpacity(0.3),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ],
                 ),
@@ -465,89 +471,138 @@ class _DashboardPageState extends State<DashboardPage> {
           body: _pages[_selectedIndex],
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
+              color: AppTheme.surfaceColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
                 ),
               ],
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(AppTheme.radiusXL),
+                topRight: Radius.circular(AppTheme.radiusXL),
               ),
             ),
             child: ClipRRect(
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(AppTheme.radiusXL),
+                topRight: Radius.circular(AppTheme.radiusXL),
               ),
               child: BottomNavigationBar(
                 currentIndex: _selectedIndex,
                 onTap: _onItemTapped,
-                backgroundColor: Colors.white,
-                selectedItemColor: Colors.deepOrange,
-                unselectedItemColor: Colors.grey,
+                backgroundColor: AppTheme.surfaceColor,
+                selectedItemColor: AppTheme.primaryColor,
+                unselectedItemColor: AppTheme.textSecondary,
                 type: BottomNavigationBarType.fixed,
-                selectedFontSize: 14,
-                unselectedFontSize: 12,
-                iconSize: 24,
+                selectedFontSize: 12,
+                unselectedFontSize: 10,
+                iconSize: 20,
                 elevation: 0,
-                selectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
+                selectedLabelStyle: AppTheme.labelSmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primaryColor,
+                ),
+                unselectedLabelStyle: AppTheme.labelSmall.copyWith(
+                  color: AppTheme.textSecondary,
                 ),
                 items: [
                   BottomNavigationBarItem(
                     icon: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppTheme.spacingS),
                       decoration: BoxDecoration(
                         color: _selectedIndex == 0
-                            ? Colors.deepOrange.withOpacity(0.1)
+                            ? AppTheme.primaryColor.withOpacity(0.1)
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                        border: _selectedIndex == 0
+                            ? Border.all(
+                                color: AppTheme.primaryColor.withOpacity(0.3),
+                                width: 1,
+                              )
+                            : null,
                       ),
-                      child: const Icon(Icons.home_rounded),
+                      child: Icon(
+                        Icons.home_rounded,
+                        color: _selectedIndex == 0
+                            ? AppTheme.primaryColor
+                            : AppTheme.textSecondary,
+                      ),
                     ),
                     label: "Home",
                   ),
                   BottomNavigationBarItem(
                     icon: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppTheme.spacingS),
                       decoration: BoxDecoration(
                         color: _selectedIndex == 1
-                            ? Colors.deepOrange.withOpacity(0.1)
+                            ? AppTheme.primaryColor.withOpacity(0.1)
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                        border: _selectedIndex == 1
+                            ? Border.all(
+                                color: AppTheme.primaryColor.withOpacity(0.3),
+                                width: 1,
+                              )
+                            : null,
                       ),
-                      child: const Icon(Icons.account_balance_wallet_rounded),
+                      child: Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: _selectedIndex == 1
+                            ? AppTheme.primaryColor
+                            : AppTheme.textSecondary,
+                      ),
                     ),
                     label: "Payout",
                   ),
                   BottomNavigationBarItem(
                     icon: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppTheme.spacingS),
                       decoration: BoxDecoration(
                         color: _selectedIndex == 2
-                            ? Colors.deepOrange.withOpacity(0.1)
+                            ? AppTheme.primaryColor.withOpacity(0.1)
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                        border: _selectedIndex == 2
+                            ? Border.all(
+                                color: AppTheme.primaryColor.withOpacity(0.3),
+                                width: 1,
+                              )
+                            : null,
                       ),
-                      child: const Icon(Icons.person_rounded),
+                      child: Icon(
+                        Icons.person_rounded,
+                        color: _selectedIndex == 2
+                            ? AppTheme.primaryColor
+                            : AppTheme.textSecondary,
+                      ),
                     ),
                     label: "Profile",
                   ),
                   BottomNavigationBarItem(
                     icon: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppTheme.spacingS),
                       decoration: BoxDecoration(
                         color: _selectedIndex == 3
-                            ? Colors.deepOrange.withOpacity(0.1)
+                            ? AppTheme.primaryColor.withOpacity(0.1)
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                        border: _selectedIndex == 3
+                            ? Border.all(
+                                color: AppTheme.primaryColor.withOpacity(0.3),
+                                width: 1,
+                              )
+                            : null,
                       ),
-                      child: const Icon(Icons.settings_rounded),
+                      child: Icon(
+                        Icons.settings_rounded,
+                        color: _selectedIndex == 3
+                            ? AppTheme.primaryColor
+                            : AppTheme.textSecondary,
+                      ),
                     ),
-                    label: "Setting",
+                    label: "Settings",
                   ),
                 ],
               ),
@@ -558,109 +613,121 @@ class _DashboardPageState extends State<DashboardPage> {
         // New Order Popup Overlay with improved design
         if (_showNewOrderPopup)
           Container(
-            color: Colors.black.withOpacity(0.54),
+            color: Colors.black.withOpacity(0.6),
             child: Center(
               child: Card(
-                margin: const EdgeInsets.all(16),
+                margin: const EdgeInsets.all(AppTheme.spacingM),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXL),
                 ),
-                elevation: 8,
+                elevation: AppTheme.elevationXL,
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXL),
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Colors.white, Colors.orange.shade50],
+                      colors: [
+                        AppTheme.surfaceColor,
+                        AppTheme.secondaryColor.withOpacity(0.05),
+                      ],
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(AppTheme.spacingXL),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Animated icon container
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppTheme.spacingL),
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange.withOpacity(0.1),
+                            gradient: AppTheme.secondaryGradient,
                             shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.secondaryColor.withOpacity(0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: const Icon(
                             Icons.delivery_dining,
-                            size: 64,
-                            color: Colors.deepOrange,
+                            size: 48,
+                            color: AppTheme.textOnPrimary,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: AppTheme.spacingL),
                         // Title with decorative elements
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                            horizontal: AppTheme.spacingL,
+                            vertical: AppTheme.spacingM,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
+                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusL,
+                            ),
                             border: Border.all(
-                              color: Colors.deepOrange.withOpacity(0.3),
+                              color: AppTheme.primaryColor.withOpacity(0.2),
                               width: 1,
                             ),
                           ),
                           child: Text(
                             _orderData['title'] ?? "New Delivery Request",
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepOrange,
+                            style: AppTheme.headingSmall.copyWith(
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.w700,
                             ),
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppTheme.spacingL),
                         // Order details
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
+                          padding: const EdgeInsets.all(AppTheme.spacingL),
+                          decoration: AppTheme.elevatedCardDecoration,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 _orderData['body'] ??
                                     "You have a new delivery offer.",
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black87,
+                                style: AppTheme.bodyLarge.copyWith(
+                                  color: AppTheme.textPrimary,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
                               if (_orderData['restaurantName'] != null) ...[
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppTheme.spacingM),
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.restaurant,
-                                      size: 18,
-                                      color: Colors.deepOrange,
+                                    Container(
+                                      padding: const EdgeInsets.all(
+                                        AppTheme.spacingS,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.secondaryColor
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(
+                                          AppTheme.radiusS,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.restaurant,
+                                        size: 16,
+                                        color: AppTheme.secondaryColor,
+                                      ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: AppTheme.spacingM),
                                     Expanded(
                                       child: Text(
                                         "Restaurant: ${_orderData['restaurantName']}",
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
+                                        style: AppTheme.bodyMedium.copyWith(
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
@@ -668,36 +735,63 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                               ],
                               if (_orderData['restaurantAddress'] != null) ...[
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppTheme.spacingM),
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.location_on,
-                                      size: 18,
-                                      color: Colors.deepOrange,
+                                    Container(
+                                      padding: const EdgeInsets.all(
+                                        AppTheme.spacingS,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryColor
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(
+                                          AppTheme.radiusS,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.location_on,
+                                        size: 16,
+                                        color: AppTheme.primaryColor,
+                                      ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: AppTheme.spacingM),
                                     Expanded(
                                       child: Text(
                                         "Pickup: ${_orderData['restaurantAddress']}",
+                                        style: AppTheme.bodyMedium,
                                       ),
                                     ),
                                   ],
                                 ),
                               ],
                               if (_orderData['customerAddress'] != null) ...[
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppTheme.spacingM),
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.pin_drop,
-                                      size: 18,
-                                      color: Colors.deepOrange,
+                                    Container(
+                                      padding: const EdgeInsets.all(
+                                        AppTheme.spacingS,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.infoColor.withOpacity(
+                                          0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          AppTheme.radiusS,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.pin_drop,
+                                        size: 16,
+                                        color: AppTheme.infoColor,
+                                      ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: AppTheme.spacingM),
                                     Expanded(
                                       child: Text(
                                         "Delivery: ${_orderData['customerAddress']}",
+                                        style: AppTheme.bodyMedium,
                                       ),
                                     ),
                                   ],
@@ -706,43 +800,60 @@ class _DashboardPageState extends State<DashboardPage> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: AppTheme.spacingXL),
                         // Action buttons with improved design
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            ElevatedButton.icon(
-                              onPressed: _rejectOrder,
-                              icon: const Icon(Icons.close),
-                              label: const Text("Reject"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.red,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: const BorderSide(color: Colors.red),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _rejectOrder,
+                                icon: const Icon(Icons.close_rounded, size: 18),
+                                label: const Text("Reject"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.surfaceColor,
+                                  foregroundColor: AppTheme.errorColor,
+                                  elevation: AppTheme.elevationS,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spacingL,
+                                    vertical: AppTheme.spacingM,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.radiusM,
+                                    ),
+                                    side: BorderSide(
+                                      color: AppTheme.errorColor,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  textStyle: AppTheme.labelLarge.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
-                            ElevatedButton.icon(
-                              onPressed: _acceptOrder,
-                              icon: const Icon(Icons.check),
-                              label: const Text("Accept"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                elevation: 2,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                            const SizedBox(width: AppTheme.spacingM),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _acceptOrder,
+                                icon: const Icon(Icons.check_rounded, size: 18),
+                                label: const Text("Accept"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.successColor,
+                                  foregroundColor: AppTheme.textOnPrimary,
+                                  elevation: AppTheme.elevationM,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spacingL,
+                                    vertical: AppTheme.spacingM,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.radiusM,
+                                    ),
+                                  ),
+                                  textStyle: AppTheme.labelLarge.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
