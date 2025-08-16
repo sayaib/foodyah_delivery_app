@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:foodyah_delivery_app/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -32,7 +33,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final SharedPreferencesManager _prefsManager = SharedPreferencesManager();
 
   late List<Widget> _pages;
-  
+
   void _initializePages() {
     _pages = [
       const OrderInProgressPage(),
@@ -134,7 +135,9 @@ class _DashboardPageState extends State<DashboardPage> {
       // Refresh tracking status when switching tabs
       _loadTrackingStatus();
       _checkServiceStatus();
-      debugPrint('Dashboard: Tab switched to $index, refreshing status and pages');
+      debugPrint(
+        'Dashboard: Tab switched to $index, refreshing status and pages',
+      );
 
       // Force refresh the status after a short delay to ensure UI is updated
       Future.delayed(const Duration(milliseconds: 100), () {
@@ -292,7 +295,8 @@ class _DashboardPageState extends State<DashboardPage> {
     // Store order information using global state manager
     await _prefsManager.setOrderData(
       orderId: _orderData['orderId'],
-      restaurantId: _orderData['restaurantName'], // Note: using restaurantName as restaurantId for compatibility
+      restaurantId:
+          _orderData['restaurantName'], // Note: using restaurantName as restaurantId for compatibility
       restaurantAddress: _orderData['restaurantAddress'],
       customerAddress: _orderData['customerAddress'],
     );
@@ -338,16 +342,12 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Scaffold(
           appBar: AppBar(
-            backgroundColor: const Color.fromARGB(255, 177, 47, 7),
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: AppTheme.textOnPrimary,
             elevation: 4,
-            shadowColor: const Color.fromARGB(
-              255,
-              204,
-              56,
-              11,
-            ).withOpacity(0.5),
+
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(0)),
             ),
             title: Row(
               children: [
